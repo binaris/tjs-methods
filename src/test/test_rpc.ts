@@ -512,7 +512,7 @@ await new Promise((resolve, reject) => {
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
 server.close();
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(/^Error: connect ECONNREFUSED/);
+await expect(client.bar('heh')).to.eventually.be.rejectedWith(/connect ECONNREFUSED/);
 }
 `;
   await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();
@@ -521,7 +521,6 @@ await expect(client.bar('heh')).to.eventually.be.rejectedWith(/^Error: connect E
 test('rpc handles empty 500 responses', pass, async () => {
   const tester = `
 import { TestClient } from './client';
-import { StatusCodeError } from 'request-promise-native/errors';
 import { AddressInfo } from 'net';
 import * as http from 'http';
 
@@ -537,7 +536,7 @@ await new Promise((resolve, reject) => {
 });
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(StatusCodeError, '500 - undefined');
+await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 - sorry');
 }
 `;
   await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();
@@ -546,7 +545,6 @@ await expect(client.bar('heh')).to.eventually.be.rejectedWith(StatusCodeError, '
 test('rpc handles non-json 500 responses', pass, async () => {
   const tester = `
 import { TestClient } from './client';
-import { StatusCodeError } from 'request-promise-native/errors';
 import { AddressInfo } from 'net';
 import * as http from 'http';
 
@@ -562,7 +560,7 @@ await new Promise((resolve, reject) => {
 });
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(StatusCodeError, '500 - "Internal Server Error"');
+await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 - Internal Server Error');
 }
 `;
   await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();

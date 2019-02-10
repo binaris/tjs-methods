@@ -70,10 +70,8 @@ function getPackage(role: Role): Package {
 
   const clientOnly = {
     dependencies: {
-      '@types/request': '^2.48.1',
-      '@types/request-promise-native': '^1.0.15',
-      request: '^2.88.0',
-      'request-promise-native': '^1.0.5',
+      'node-fetch': '^2.3.0',
+      '@types/node-fetch': '^2.1.4',
     },
   };
 
