@@ -93,7 +93,7 @@ export async function generate(filePattern: string, role: Role = Role.ALL): Prom
     required: true,
     noExtraProps: true,
     propOrder: true,
-    validationKeywords: ['launchType'],
+    validationKeywords: ['concordType'],
     include: paths,
   };
 

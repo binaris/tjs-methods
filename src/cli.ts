@@ -23,7 +23,7 @@ interface Args {
 }
 
 const argv = yargs
-  .command('$0 <package> <pattern>', 'launch code generator', (y) => y
+  .command('$0 <package> <pattern>', 'concord code generator', (y) => y
     .positional('package',  {
       type: 'string',
       describe: 'Publish as npm package with format of <packageName>@<version> (e.g. myservice@1.2.3)',

@@ -13,7 +13,7 @@ interface TypeDef {
   required?: string[];
   items?: TypeDef | TypeDef[];
   enum?: any[];
-  launchType?: string;
+  concordType?: string;
 }
 
 export function addCoersion(def: any): void {
@@ -31,9 +31,9 @@ export function addCoersion(def: any): void {
 }
 
 export function typeToString(def: TypeDef): string {
-  const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, launchType } = def;
-  if (typeof launchType === 'string') {
-    return launchType;
+  const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, concordType } = def;
+  if (typeof concordType === 'string') {
+    return concordType;
   }
   if (typeof type === 'string') {
     if (defEnum) {

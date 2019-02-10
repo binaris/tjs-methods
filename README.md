@@ -1,9 +1,9 @@
-# launch (working title)
+# concord
 
-*launch* transforms Typescript interfaces into usable client / server code.
+*concord* transforms Typescript interfaces into usable client / server code.
 
-It simplifies the process of writing clients and servers and lets you launch your code faster.
-Instead of describing REST APIs, `launch` abstracts away REST and HTTP and gives you a simple typescript interface.
+It simplifies the process of writing clients and servers and lets you concord your code faster.
+Instead of describing REST APIs, `concord` abstracts away REST and HTTP and gives you a simple typescript interface.
 
 Behind the scenes it uses simple HTTP POST with JSON payload and is validated using JSONSchema.
 The heavy lifting is done by [typescript-json-schema](https://github.com/YousefED/typescript-json-schema).
@@ -25,7 +25,7 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
     ```
 1. Compile the schema.
     ```bash
-    mkdir -p ./generated && launch example@0.0.1 interface.ts -o ./generated
+    mkdir -p ./generated && concord example@0.0.1 interface.ts -o ./generated
     ```
 1. Write the server code.
 
@@ -78,10 +78,10 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
 
 ## Advanced usage
 ### Creating an npm package
-Launch can create an npm package for you and publish it if instead of specifying an output dir you give it a publish target.
-In the following example `launch` will publish the generated server files to npm as example-server@0.0.1:
+Concord can create an npm package for you and publish it if instead of specifying an output dir you give it a publish target.
+In the following example `concord` will publish the generated server files to npm as example-server@0.0.1:
 ```bash
-launch -p -r server example@0.0.1 interface.ts
+concord -p -r server example@0.0.1 interface.ts
 ```
 
 ### Calling with curl # TODO
@@ -111,7 +111,7 @@ export interface Example {
 ### Context
 Some use cases require context to be passed on to handlers (i.e. for authentication / extracting the request IP).
 
-There are 2 types of contexts in `launch`, `ClientContext` and `ServerOnlyContext`.
+There are 2 types of contexts in `concord`, `ClientContext` and `ServerOnlyContext`.
 
 * `ClientContext` is prepended to the client call signature and is exported as `Context` from the generated client file.
 * `ServerOnlyContext` is extracted by the server using a custom provided function that accepts a request object (depends on the runtime) and returns a context object.  Handler methods receive a context which is an intersection of `ClientContext` and `ServerOnlyContext` and is exported as `Context` from the generated server code.
@@ -173,8 +173,8 @@ main();
 
 ### Generating only client / server
 ```bash
-launch --role client -o ./generated interfaces.ts
-launch --role server -o ./generated interfaces.ts
+concord --role client -o ./generated interfaces.ts
+concord --role server -o ./generated interfaces.ts
 ```
 
 ### Mounting the app with a different prefix and adding custom middleware
@@ -244,15 +244,15 @@ Defining `returns: null | SomethingElse` on a method will compile to `Promise<nu
 ## Comparison to other tools
 #### OpenAPI (Swagger)
 [OpenAPI](https://www.openapis.org/) provides an easy way to write descriptive REST APIs.
-`launch` on the other hand, spares you from even thinking about REST and lets you focus on your buisness logic.
+`concord` on the other hand, spares you from even thinking about REST and lets you focus on your buisness logic.
 
-Both projects use JSON Schema for input validation. OpenAPI let's you write pure JSON schema while `launch` interfaces are written in typescript.
+Both projects use JSON Schema for input validation. OpenAPI let's you write pure JSON schema while `concord` interfaces are written in typescript.
 
 #### Protobuf / Thrift
 `protobuf` and `thrift` have ATM more efficient serialization.
 They both enforce backwards compatibility better with field numbering? (TODO)
-In the future we could add binary serialization to `launch` but we default to JSON for readability.
+In the future we could add binary serialization to `concord` but we default to JSON for readability.
 
-`launch` provides advanced type validation with JSON schema.
+`concord` provides advanced type validation with JSON schema.
 
-`launch` uses [mustache](link-needed) templates which are easy to customize to support any language / framework.
+`concord` uses [mustache](link-needed) templates which are easy to customize to support any language / framework.
