@@ -73,7 +73,7 @@ export interface Test {
   ]);
 
   expect(pkg.dependencies.koa).to.be.a('undefined');
-  expect(pkg.dependencies.request).to.be.a('string');
+  expect(pkg.dependencies['node-fetch']).to.be.a('string');
 });
 
 test('generate generates only server code when requested', pass, async () => {
