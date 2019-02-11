@@ -39,7 +39,7 @@
     "@types/mz": "0.0.32",
     "@types/node": "^10.12.6",
     "@types/rmfr": "^2.0.0",
-    "@types/yargs": "^11.0.0",
+    "@types/yargs": "^11.1.2",
     "ajv": "^6.5.5",
     "ava": "^1.0.0-rc.2",
     "chai": "^4.1.2",

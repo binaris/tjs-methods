@@ -1,3 +1,15 @@
+export enum Runtime {
+  node = 'node',
+  node_koa = 'node_koa',
+  browser = 'browser',
+}
+
+export enum Role {
+  ALL = 'all',
+  CLIENT = 'client',
+  SERVER = 'server',
+}
+
 export interface Package {
   dependencies: {
     [name: string]: string;
@@ -15,10 +27,4 @@ export interface GeneratedCode {
   code: {
     [name: string]: string;
   };
-}
-
-export enum Role {
-  ALL = 'all',
-  CLIENT = 'client',
-  SERVER = 'server',
 }
