@@ -1,9 +1,10 @@
 import * as path from 'path';
+import { merge } from 'lodash';
 import { mkdir, stat, writeFile } from 'mz/fs';
-import { GeneratedCode, Role } from './types';
+import { GeneratedCode, Role, Runtime } from './types';
 import { spawn } from './utils';
 
-const tsconfig = {
+const tsconfigBase = {
   version: '2.4.2',
   compilerOptions: {
     lib: ['es2017', 'esnext'],
@@ -26,6 +27,16 @@ const tsconfig = {
   ],
 };
 
+const tsconfig: Record<Runtime, any> = {
+  [Runtime.browser]: merge(tsconfigBase, {
+    compilerOptions: {
+      lib: [...tsconfigBase.compilerOptions.lib, 'dom'],
+    },
+  }),
+  [Runtime.node]: tsconfigBase,
+  [Runtime.node_koa]: tsconfigBase,
+};
+
 export class TSOutput {
   protected npm: (...args: string[]) => Promise<number>;
   protected tsc: (...args: string[]) => Promise<number>;
@@ -44,6 +55,7 @@ export class TSOutput {
   }
 
   public async write(
+    runtime: Runtime,
     name: string,
     version: string,
     { code, pkg: basePackage }: GeneratedCode,
@@ -59,7 +71,7 @@ export class TSOutput {
     await Promise.all(Object.entries(code).map(
       ([n, c]) => writeFile(path.join(this.genPath, 'src', n), c)
     ));
-    await writeFile(path.join(this.genPath, 'tsconfig.json'), JSON.stringify(tsconfig));
+    await writeFile(path.join(this.genPath, 'tsconfig.json'), JSON.stringify(tsconfig[runtime]));
     const main = role === Role.ALL ? 'interfaces' : role;
     const pkgName = role === Role.ALL ? name : `${name}-${role}`;
 

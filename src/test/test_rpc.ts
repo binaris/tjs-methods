@@ -67,6 +67,7 @@ ${this.tester}`);
 
     await spawn('node', [
       path.join(__dirname, '..', 'cli.js'),
+      'node_koa',
       'test@0.0.1',
       'schema.ts',
       '-o',

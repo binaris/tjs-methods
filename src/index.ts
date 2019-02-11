@@ -6,38 +6,16 @@ import * as tjs from 'typescript-json-schema';
 import * as mustache from 'mustache';
 import { promisify } from 'util';
 import * as path from 'path';
-import { GeneratedCode, Package, Role } from './types';
+import { GeneratedCode, Package, Role, Runtime } from './types';
 import { transform } from './transform';
 
 const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
 
-function getLib(role: Role): string[] {
-  switch (role) {
-    case Role.ALL:
-    case Role.SERVER:
-      return ['common.ts', 'koaMW.ts'];
-    case Role.CLIENT:
-      return ['common.ts'];
-  }
-}
-
-function getTemplateNames(role: Role) {
-  switch (role) {
-    case Role.SERVER:
-      return ['interfaces', 'server'];
-    case Role.CLIENT:
-      return ['interfaces', 'client'];
-    case Role.ALL:
-      return ['interfaces', 'client', 'server'];
-  }
-}
-
-function getPackage(role: Role): Package {
-  // @types packages could have been peer dependencies but we decided
-  // to put these here to simplify usage of generate code
-
-  const base = {
+// @types packages could have been peer dependencies but we decided
+// to put these here to simplify usage of generate code
+const packageSpec = {
+  base: {
     dependencies: {
       ajv: '^6.5.5',
       lodash: '^4.17.11',
@@ -46,9 +24,8 @@ function getPackage(role: Role): Package {
       '@types/lodash': '^4.14.118',
       '@types/node': '^10.12.6',
     },
-  };
-
-  const serverOnly = {
+  },
+  serverOnly: {
     dependencies: {
       '@types/koa': '^2.0.46',
       '@types/koa-bodyparser': '^5.0.1',
@@ -66,26 +43,87 @@ function getPackage(role: Role): Package {
     peerDependencies: {
       '@types/node': '>=8.0.0',
     },
-  };
-
-  const clientOnly = {
+  },
+  nodeClientOnly: {
     dependencies: {
       'node-fetch': '^2.3.0',
       '@types/node-fetch': '^2.1.4',
     },
-  };
+  },
+};
 
-  switch (role) {
-    case Role.SERVER:
-      return merge(base, serverOnly);
-    case Role.CLIENT:
-      return merge(base, clientOnly);
-    case Role.ALL:
-      return merge(base, clientOnly, serverOnly);
-  }
+export interface Generator {
+  pkg: Package;
+  libs: string[];
+  templateNames: Record<string, string>;
 }
 
-export async function generate(filePattern: string, role: Role = Role.ALL): Promise<GeneratedCode> {
+function getGenerator(runtime: Runtime, role: Role): Generator {
+  const { base, serverOnly, nodeClientOnly } = packageSpec;
+  switch (runtime) {
+    case Runtime.browser:
+      switch (role) {
+        case Role.CLIENT:
+          return {
+            pkg: base,
+            libs: ['common.ts'],
+            templateNames: {
+              'interfaces.ts': 'interfaces.ts',
+              'client-browser.ts': 'client.ts',
+            },
+          };
+      }
+      break;
+    case Runtime.node:
+      switch (role) {
+        case Role.CLIENT:
+          return {
+            pkg: merge(base, nodeClientOnly),
+            libs: ['common.ts'],
+            templateNames: {
+              'interfaces.ts': 'interfaces.ts',
+              'client-node.ts': 'client.ts',
+            },
+          };
+      }
+      break;
+    case Runtime.node_koa:
+      switch (role) {
+        case Role.CLIENT:
+          return {
+            pkg: merge(base, nodeClientOnly),
+            libs: ['common.ts'],
+            templateNames: {
+              'interfaces.ts': 'interfaces.ts',
+              'client-node.ts': 'client.ts',
+            },
+          };
+        case Role.SERVER:
+          return {
+            pkg: merge(base, serverOnly),
+            libs: ['common.ts', 'koaMW.ts'],
+            templateNames: {
+              'interfaces.ts': 'interfaces.ts',
+              'server.ts': 'server.ts',
+            },
+          };
+        case Role.ALL:
+          return {
+            pkg: merge(base, nodeClientOnly, serverOnly),
+            libs: ['common.ts', 'koaMW.ts'],
+            templateNames: {
+              'interfaces.ts': 'interfaces.ts',
+              'server.ts': 'server.ts',
+              'client-node.ts': 'client.ts',
+            },
+          };
+      }
+      break;
+  }
+  throw new Error(`No generator for ${runtime}-${role}`);
+}
+
+export async function generate(runtime: Runtime, filePattern: string, role: Role = Role.ALL): Promise<GeneratedCode> {
   const paths = await promisify(glob)(filePattern);
   const settings: tjs.PartialArgs = {
     required: true,
@@ -105,17 +143,16 @@ export async function generate(filePattern: string, role: Role = Role.ALL): Prom
     allowUnusedLabels: true,
   };
 
-  const libFiles = getLib(role);
-  const libContents = await Promise.all(libFiles.map((n) => readFile(path.join(libPath, n), 'utf-8')));
+  const { libs, templateNames, pkg } = getGenerator(runtime, role);
+  const libContents = await Promise.all(libs.map((n) => readFile(path.join(libPath, n), 'utf-8')));
 
   const program = ts.createProgram(paths, compilerOptions);
   const schema = tjs.generateSchema(program, '*', settings, paths);
   const spec = transform(schema);
-  const genFiles = getTemplateNames(role).map((n) => `${n}.ts`);
-  const templates = await Promise.all(genFiles.map((n) => readFile(tmplPath(n), 'utf-8')));
+  const templates = await Promise.all(Object.keys(templateNames).map((n) => readFile(tmplPath(n), 'utf-8')));
   const rendered = templates.map((t) => mustache.render(t, spec));
   return {
-    pkg: getPackage(role),
-    code: fromPairs(zip([...libFiles, ...genFiles], [...libContents, ...rendered])),
+    pkg,
+    code: fromPairs(zip([...libs, ...Object.values(templateNames)], [...libContents, ...rendered])),
   };
 }
