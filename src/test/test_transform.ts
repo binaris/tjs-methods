@@ -70,8 +70,8 @@ test('typeToString passes through a string type', pass, () => {
   expect(result).to.equal('string');
 });
 
-test('typeToString transforms launchType to launchType', pass, () => {
-  const result = typeToString({ type: 'string', launchType: 'LT' });
+test('typeToString transforms concordType to concordType', pass, () => {
+  const result = typeToString({ type: 'string', concordType: 'LT' });
   expect(result).to.equal('LT');
 });
 

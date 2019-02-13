@@ -1,5 +1,5 @@
 {
-  "name": "launch",
+  "name": "concord",
   "version": "0.0.1",
   "description": "transforms a Typescript interface into usable client / server code",
   "main": "dist/index.js",
@@ -8,24 +8,25 @@
     "test": "ava --verbose --timeout 60s dist/test/**/test*.js"
   },
   "bin": {
-    "launch": "./bin/launch"
+    "concord": "./bin/concord"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bergundy/tjs-methods.git"
+    "url": "git+https://github.com/binaris/concord.git"
   },
   "keywords": [
-    "typescript-json-schema",
-    "tjs",
+    "json-schema",
+    "typescript",
     "schema",
-    "methods"
+    "methods",
+    "rpc"
   ],
   "author": "bergundy",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bergundy/tjs-methods/issues"
+    "url": "https://github.com/binaris/concord/issues"
   },
-  "homepage": "https://github.com/bergundy/tjs-methods#readme",
+  "homepage": "https://github.com/binaris/concord#readme",
   "devDependencies": {
     "@types/ajv": "^1.0.0",
     "@types/chai": "^4.1.3",
