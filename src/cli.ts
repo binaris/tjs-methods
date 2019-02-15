@@ -5,7 +5,7 @@ import * as path from 'path';
 import * as yargs from 'yargs';
 import * as rmrf from 'rmfr';
 import { generate } from './index';
-import { Role, Runtime } from './types';
+import { Runtime } from './types';
 import { TSOutput } from './output';
 
 function mktemp(): string {
@@ -16,7 +16,8 @@ interface Args {
   _: [Runtime];
   pattern: string;
   output?: string;
-  role: Role;
+  client: string;
+  server: string;
   publish: boolean;
   'nocompile': boolean;
   'package': string;
@@ -49,31 +50,31 @@ const argv = yargs
   .command('$0 <runtime>', 'concord code generator', (y) => y
     .command(
       `${Runtime.node} <package> <pattern>`,
-      'Generate code for node runtime (client)',
-      (yy) => tsSubcommand(yy).option('role', {
+      'Generate code for node runtime (client | server)',
+      (yy) => tsSubcommand(yy)
+      .option('client', {
         type: 'string',
-        hidden: true,
-        default: Role.CLIENT,
+        alias: 'c',
+        choices: ['fetch'],
+        describe: 'Client framework',
       })
-    )
-    .command(
-      `${Runtime.node_koa} <package> <pattern>`,
-      'Generate code for node_koa runtime (default node client | server)',
-      (yy) => tsSubcommand(yy).option('role', {
+      .option('server', {
         type: 'string',
-        alias: 'r',
-        default: Role.ALL,
-        choices: Object.values(Role),
-        describe: 'Generate specific role',
+        alias: 's',
+        choices: ['koa'],
+        describe: 'Server framework',
       })
     )
     .command(
       `${Runtime.browser} <package> <pattern>`,
       'Generate code for browser runtime (client)',
-      (yy) => tsSubcommand(yy).option('role', {
+      (yy) => tsSubcommand(yy)
+      .option('client', {
         type: 'string',
-        hidden: true,
-        default: Role.CLIENT,
+        default: 'fetch',
+        alias: 'c',
+        choices: ['fetch'],
+        describe: 'Client framework',
       })
     )
     .demandCommand()
@@ -96,7 +97,8 @@ async function main({
     'package': pkgName,
     'nocompile': noCompile,
     output,
-    role,
+    client,
+    server,
     publish,
     'publish-tag': tag,
   }: Args) {
@@ -106,10 +108,13 @@ async function main({
   }
   const name = parts.slice(0, -1).join('@');
   const version = parts[parts.length - 1];
+  if (!client && !server) {
+    throw new Error('Must specify one of (client or server) option');
+  }
 
   if (publish) {
-    if (!role || role === Role.ALL) {
-      throw new Error('Must specify `role` (client or server) option with `publish`');
+    if (client && server) {
+      throw new Error('Must specify exactly one of (client or server) option with `publish`');
     }
   }
   const genPath = output || mktemp();
@@ -118,8 +123,8 @@ async function main({
   }
   try {
     const generator = await TSOutput.create(genPath);
-    const generated = await generate(runtime, pattern, role);
-    await generator.write(runtime, name, version, generated, role);
+    const generated = await generate(runtime, pattern, { client, server });
+    await generator.write(runtime, name, version, generated, { client, server });
     if (!noCompile) {
       await generator.compile();
     }

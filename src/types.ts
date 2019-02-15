@@ -1,13 +1,11 @@
 export enum Runtime {
   node = 'node',
-  node_koa = 'node_koa',
   browser = 'browser',
 }
 
-export enum Role {
-  ALL = 'all',
-  CLIENT = 'client',
-  SERVER = 'server',
+export interface FrameworkMap {
+  client?: string;
+  server?: string;
 }
 
 export interface Package {

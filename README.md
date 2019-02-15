@@ -25,7 +25,7 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
     ```
 1. Compile the schema.
     ```bash
-    mkdir -p ./generated && concord -o ./generated node_koa example@0.0.1 interface.ts
+    mkdir -p ./generated && concord -o ./generated node --client fetch --server koa example@0.0.1 interface.ts
     ```
 1. Write the server code.
 
@@ -81,12 +81,13 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
 Concord can create an npm package for you and publish it if instead of specifying an output dir you give it a publish target.
 In the following example `concord` will publish the generated server files to npm as example-client@0.0.1:
 ```bash
-concord node --publish --role client example@0.0.1 interface.ts
+concord node --publish --client fetch example-client@0.0.1 interface.ts
 ```
 
 ### Generating code for different runtimes
-The first positional argument given to the `concord` CLI is `runtime`, currently supported clients are `node` and `browser`, supported server is `node_koa`.\
-`node_koa` runtime will use the default `node` client when generating `all` roles (client and server), run `concord <runtime> --help` for more details.
+The first positional argument given to the `concord` CLI is `runtime`, currently supported runtimes are `node` and `browser`.\
+The node `node` runtime supports a `koa` server and a `fetch` client.\
+Run `concord <runtime> --help` for more details.
 
 
 ### Calling with curl # TODO
@@ -178,8 +179,8 @@ main();
 
 ### Generating only client / server
 ```bash
-concord -o ./generated_client node_koa --role client interfaces.ts
-concord -o ./generated_server node_koa --role server interfaces.ts
+concord -o ./generated_client node --client fetch example-client@0.0.1 interfaces.ts
+concord -o ./generated_server node --server koa example-server@0.0.1 interfaces.ts
 ```
 
 ### Mounting the app with a different prefix and adding custom middleware

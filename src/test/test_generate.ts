@@ -1,5 +1,6 @@
 import test from 'ava';
-import { zipObject } from 'lodash';
+import { zipObject, flatten, mapKeys } from 'lodash';
+import { tmpdir } from 'os';
 import * as glob from 'glob';
 import { expect } from 'chai';
 import { promisify } from 'util';
@@ -7,12 +8,12 @@ import * as path from 'path';
 import { randomBytes } from 'crypto';
 import * as rmrf from 'rmfr';
 import { readFile, writeFile, mkdir } from 'mz/fs';
-import { GeneratedCode, Role } from '../types';
+import { GeneratedCode, FrameworkMap } from '../types';
 import { spawn } from '../utils';
 import { pass } from './utils';
 
 function mktemp(): string {
-  return path.join(__dirname, '..', 'tmpTestCases', `test-${randomBytes(20).toString('hex')}`);
+  return path.join(tmpdir(), `test-${randomBytes(20).toString('hex')}`);
 }
 
 class TestCase {
@@ -26,33 +27,36 @@ class TestCase {
     await rmrf(this.dir);
   }
 
-  public async generate(role: Role): Promise<GeneratedCode> {
+  public async generate(frameworks: FrameworkMap): Promise<GeneratedCode> {
     await mkdir(this.dir);
-    await mkdir(path.join(this.dir, 'gen'));
-    const schemaPath = path.join(this.dir, 'schema.ts');
-    await writeFile(schemaPath, this.schema);
-    await spawn('node', [
-      path.join(__dirname, '..', 'cli.js'),
-      'node_koa',
-      'test@0.0.1',
-      'schema.ts',
-      '--nocompile',
-      '-r',
-      role,
-      '-o',
-      'gen',
-    ], {
-      cwd: this.dir,
-      stdio: 'inherit',
-    });
-    const paths = await promisify(glob)(path.join(this.dir, 'gen', 'src', '*'));
-    const files = await Promise.all(paths.map((p) => path.basename(p)));
-    const contents = await Promise.all(paths.map((p) => readFile(p, 'utf-8')));
+    try {
+      await mkdir(path.join(this.dir, 'gen'));
+      const schemaPath = path.join(this.dir, 'schema.ts');
+      await writeFile(schemaPath, this.schema);
+      await spawn('node', [
+        path.join(__dirname, '..', 'cli.js'),
+        'node',
+        'test@0.0.1',
+        'schema.ts',
+        '--nocompile',
+        ...flatten(Object.entries(mapKeys(frameworks, (_, k) => `--${k}`))) as string[],
+        '-o',
+        'gen',
+      ], {
+        cwd: this.dir,
+        stdio: 'inherit',
+      });
+      const paths = await promisify(glob)(path.join(this.dir, 'gen', 'src', '*'));
+      const files = await Promise.all(paths.map((p) => path.basename(p)));
+      const contents = await Promise.all(paths.map((p) => readFile(p, 'utf-8')));
 
-    return {
-      pkg: JSON.parse(await readFile(path.join(this.dir, 'gen', 'package.json'), 'utf-8')),
-      code: zipObject(files, contents),
-    } as any;
+      return {
+        pkg: JSON.parse(await readFile(path.join(this.dir, 'gen', 'package.json'), 'utf-8')),
+        code: zipObject(files, contents),
+      } as any;
+    } finally {
+      await this.cleanup();
+    }
   }
 }
 
@@ -66,7 +70,7 @@ export interface Test {
     returns: string;
   };
 }`
-  ).generate(Role.CLIENT);
+  ).generate({ client: 'fetch' });
   expect(Object.keys(code).sort()).to.eql([
     'client.ts',
     'common.ts',
@@ -87,7 +91,7 @@ export interface Test {
     returns: string;
   };
 }`
-  ).generate(Role.SERVER);
+  ).generate({ server: 'koa' });
   expect(Object.keys(code).sort()).to.eql([
     'common.ts',
     'interfaces.ts',
@@ -105,7 +109,7 @@ export interface A {
   readonly optional?: number;
   readonly required: number;
 }`;
-  const { code } = await new TestCase(iface).generate(Role.SERVER);
+  const { code } = await new TestCase(iface).generate({ server: 'koa' });
   expect(code['interfaces.ts']).to.contain(iface.trim());
 });
 
@@ -120,13 +124,13 @@ export interface A {
     };
   };
 }`;
-  const { code } = await new TestCase(iface).generate(Role.SERVER);
+  const { code } = await new TestCase(iface).generate({ server: 'koa' });
   expect(code['interfaces.ts']).to.contain('foo(): Promise<{ a?: number; }>');
 });
 
 test('generate generates declarations of root level union types', pass, async () => {
   const iface = 'export type A = { a: number; } | { b: number; };';
-  const { code } = await new TestCase(iface).generate(Role.SERVER);
+  const { code } = await new TestCase(iface).generate({ server: 'koa' });
   expect(code['interfaces.ts']).to.contain(iface);
 });
 
@@ -137,6 +141,6 @@ export enum A {
   B = 'b',
   C_1 = 'c-1',
 }`;
-  const { code } = await new TestCase(iface).generate(Role.SERVER);
+  const { code } = await new TestCase(iface).generate({ server: 'koa' });
   expect(code['interfaces.ts']).to.contain(iface.trim());
 });
