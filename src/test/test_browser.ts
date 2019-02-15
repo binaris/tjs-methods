@@ -87,12 +87,12 @@ main().catch((err) => {
 
     await spawn('node', [
       path.join(__dirname, '..', 'cli.js'),
-      'node_koa',
-      'test@0.0.1',
+      'node',
+      'test-server@0.0.1',
       'schema.ts',
       '--nocompile',
-      '-r',
-      'server',
+      '--server',
+      'koa',
       '-o',
       './server',
     ], {
@@ -124,7 +124,7 @@ main().catch((err) => {
     await spawn('node', [
       path.join(__dirname, '..', 'cli.js'),
       'browser',
-      'test@0.0.1',
+      'test-client@0.0.1',
       'schema.ts',
       '-o',
       './client',

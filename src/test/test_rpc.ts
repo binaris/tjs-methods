@@ -1,6 +1,6 @@
 import test from 'ava';
-import 'chai-as-promised';
 import * as path from 'path';
+import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
 import * as rmrf from 'rmfr';
 import { writeFile, mkdir } from 'mz/fs';
@@ -9,7 +9,7 @@ import { spawn } from '../utils';
 import { pass } from './utils';
 
 function mktemp(): string {
-  return path.join(__dirname, '..', 'tmpTestCases', `test-${randomBytes(20).toString('hex')}`);
+  return path.join(tmpdir(), `test-${randomBytes(20).toString('hex')}`);
 }
 
 class TestCase {
@@ -67,12 +67,38 @@ ${this.tester}`);
 
     await spawn('node', [
       path.join(__dirname, '..', 'cli.js'),
-      'node_koa',
+      'node',
       'test@0.0.1',
       'schema.ts',
+      '--client', 'fetch',
+      '--server', 'koa',
+      '--nocompile',
       '-o',
       '.',
     ], {
+      cwd: this.dir,
+      stdio: 'inherit',
+    });
+
+    await spawn('npm', [
+      'install',
+      'chai',
+      'chai-as-promised',
+      '@types/chai',
+      '@types/chai-as-promised',
+    ], {
+      cwd: this.dir,
+      stdio: 'inherit',
+    });
+
+    await spawn('npm', ['install'], {
+      cwd: this.dir,
+      stdio: 'inherit',
+    });
+
+    await spawn(
+      path.join(__dirname, '..', '..', 'node_modules', '.bin', 'tsc'),
+      [], {
       cwd: this.dir,
       stdio: 'inherit',
     });
@@ -92,11 +118,8 @@ ${this.tester}`);
     try {
       await this.setup();
       return await this.exec();
-    // } catch (err) {
-    //   console.error(err);
-    //   throw err;
     } finally {
-      // await this.cleanup();
+      await this.cleanup();
     }
   }
 }
