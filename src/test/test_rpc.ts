@@ -607,3 +607,60 @@ await expect(client.bar('')).to.eventually.be.rejectedWith(ValidationError, 'Bad
 `;
   await new TestCase(dummySchema, handler, tester).run();
 });
+
+test('rpc throws an abort error on timeout', pass, async () => {
+  const handler = `
+export default class Handler {
+  public async bar(name: string): Promise<string> {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return 'Hello, ' + name;
+  }
+}
+`;
+  const tester = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+await expect(client.bar('yay', { timeoutMs: 100 })).to.eventually.be.rejectedWith(Error, 'The user aborted a request.');
+}
+`;
+  await new TestCase(dummySchema, handler, tester).run();
+});
+
+test('rpc supports custom headers', pass, async () => {
+  const schema = `
+export interface ServerOnlyContext {
+  debugId: string;
+}
+
+export interface Test {
+  bar: {
+    params: {};
+    returns: string;
+  };
+}
+`;
+  const handler = `
+import * as koa from 'koa';
+import { Context, ServerOnlyContext } from './server';
+
+export default class Handler {
+  public async extractContext(ctx: koa.Context): Promise<ServerOnlyContext> {
+    return { debugId: ctx.get('Debug-Id')! };
+  }
+
+  public async bar({ debugId }: ServerOnlyContext): Promise<string> {
+    return debugId;
+  }
+}
+`;
+  const tester = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+  const res = await client.bar({ headers: { 'Debug-Id': 'yay' } });
+  expect(res).to.eql('yay');
+}
+`;
+  await new TestCase(schema, handler, tester).run();
+});
