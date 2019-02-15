@@ -1,6 +1,4 @@
 // tslint:disable
-// import fetch from 'node-fetch';
-// import { RequestInit } from 'node-fetch';
 import { createReturnTypeValidator, ClassValidator, ValidationError } from './common';
 import {
   schema,
@@ -23,9 +21,18 @@ export {
   ValidationError,
 };
 
-// TODO: implement timeoutMs with abort-signal
-// TODO: support custom headers
-export interface Options extends Pick<RequestInit, 'redirect'> {
+export interface Options extends Pick<RequestInit,
+  'cache'
+  | 'credentials'
+  | 'mode'
+  | 'redirect'
+  | 'referrer'
+  | 'referrerPolicy'
+  | 'integrity'
+  | 'keepalive'
+  | 'window'
+  > {
+  headers?: Record<string, string>;
 }
 
 {{#clientContext}}
@@ -76,6 +83,7 @@ export class {{name}}Client {
     const response = await fetch(`${this.serverUrl}/{{name}}`, {
       ...mergedOptions,
       headers: {
+        ...mergedOptions.headers,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
