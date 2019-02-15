@@ -46,6 +46,7 @@ const packageSpec = {
   },
   nodeClientOnly: {
     dependencies: {
+      'abort-controller': '^2.0.2',
       'node-fetch': '^2.3.0',
       '@types/node-fetch': '^2.1.4',
     },
