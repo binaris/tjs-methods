@@ -1,12 +1,7 @@
 import test from 'ava';
-import { expect } from 'chai';
-import { pass } from './utils';
 import { createClassValidator } from '../lib/common';
 
-const dateSchema = { type: 'string', format: 'date-time' };
-const dateString = '2018-01-01T18:00:00.000Z';
-
-test('createClassValidator creates an ajv ValidateFunction for each method signature in the class', pass, () => {
+test('createClassValidator creates an ajv ValidateFunction for each method signature in the class', (t) => {
   const schema = {
     definitions: {
       Foo: {
@@ -28,11 +23,11 @@ test('createClassValidator creates an ajv ValidateFunction for each method signa
     },
   };
   const validators = createClassValidator(schema, 'Foo', 'params');
-  expect(validators.hello({ name: 'heh' })).to.be.true;
-  expect(validators.hello({})).to.be.false;
+  t.true(validators.hello({ name: 'heh' }));
+  t.false(validators.hello({}));
 });
 
-test('createClassValidator resolves refs', pass, () => {
+test('createClassValidator resolves refs', (t) => {
   const schema = {
     definitions: {
       Bar: {
@@ -57,6 +52,6 @@ test('createClassValidator resolves refs', pass, () => {
     },
   };
   const validators = createClassValidator(schema, 'Foo', 'params');
-  expect(validators.hello({ name: 'heh' })).to.be.true;
-  expect(validators.hello({})).to.be.false;
+  t.true(validators.hello({ name: 'heh' }));
+  t.false(validators.hello({}));
 });

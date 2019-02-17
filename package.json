@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
+    "lint": "tslint -p .",
     "test": "ava --verbose --timeout 60s dist/test/**/test*.js"
   },
   "bin": {
@@ -45,6 +46,7 @@
     "koa-bodyparser": "^4.2.1",
     "koa-router": "^7.4.0",
     "puppeteer": "^1.12.2",
+    "tslint": "^5.12.1",
     "webpack": "^4.29.3",
     "webpack-cli": "^3.2.3",
     "webpack-dev-server": "^3.1.14"

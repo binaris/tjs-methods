@@ -159,7 +159,7 @@ main().catch((err) => {
       let webpackPort: number | undefined;
 
       const serverUrl = await new Promise((resolve, reject) => {
-        server.on('exit', (code) => {
+        server.on('exit', () => {
           reject();
         });
         server.stdout.on('data', (buff: Buffer) => {
@@ -174,7 +174,7 @@ main().catch((err) => {
       });
 
       await new Promise((resolve, reject) => {
-        webpack.on('exit', (code) => {
+        webpack.on('exit', () => {
           reject();
         });
         webpack.stdout.on('data', (buff: Buffer) => {
@@ -250,5 +250,5 @@ if (result !== '666') {
   throw new Error('Expected result to equal 666, got: ' + result);
 }
 `;
-  const tc = await TestCase.createAndRun(schema, handler, tester);
+  await TestCase.createAndRun(schema, handler, tester);
 });
