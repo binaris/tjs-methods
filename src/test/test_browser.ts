@@ -134,7 +134,7 @@ main().catch((err) => {
     });
 
     await spawn('npm', [
-      'link',
+      'install',
       path.join(this.dir, 'client'),
     ], {
       cwd: path.join(this.dir, 'webpack-test'),
