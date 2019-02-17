@@ -197,10 +197,12 @@ main().catch((err) => {
       // tslint:disable-next-line:no-console
       console.log({ webpackPort, serverUrl });
 
-      const browser = await launch();
+      const browser = await launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
       const page = await browser.newPage();
       await page.goto(`http://localhost:${webpackPort}`);
-      const res = await page.evaluate(`(async () => {
+      await page.evaluate(`(async () => {
         const client = new TestClient('${serverUrl}');
         ${this.tester}
       })()`);
