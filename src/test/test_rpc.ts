@@ -621,7 +621,8 @@ export default class Handler {
 import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
-await expect(client.bar('yay', { timeoutMs: 100 })).to.eventually.be.rejectedWith(Error, 'The user aborted a request.');
+  await expect(client.bar('yay', { timeoutMs: 100 })).to.eventually.be.rejectedWith(
+    Error, 'Request aborted due to timeout on method "bar"');
 }
 `;
   await new TestCase(dummySchema, handler, tester).run();

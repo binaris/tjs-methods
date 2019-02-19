@@ -154,6 +154,8 @@ main().catch((err) => {
     });
 
     try {
+      // Hacky and ugly way to get the listen ports.
+      // It's done this way to avoid a possible race when passing in a pre allocated port.
       let webpackPort: number | undefined;
 
       const serverUrl = await new Promise((resolve, reject) => {
