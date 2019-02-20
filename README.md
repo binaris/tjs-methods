@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/binaris/concord.svg?style=svg)](https://circleci.com/gh/binaris/concord)
+
 # concord
 
 *concord* transforms Typescript interfaces into usable client / server code.
