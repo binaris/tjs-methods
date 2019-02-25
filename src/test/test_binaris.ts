@@ -1,16 +1,8 @@
 import test from 'ava';
 import * as path from 'path';
-import { tmpdir } from 'os';
-import { randomBytes } from 'crypto';
-import * as rmrf from 'rmfr';
-import { writeFile, mkdir } from 'mz/fs';
-import { exec } from 'mz/child_process';
+import { writeFile } from 'mz/fs';
 import { spawn } from '../utils';
 import { pass, TestRunner } from './utils';
-
-function mktemp(): string {
-  return path.join(tmpdir(), `test-${randomBytes(20).toString('hex')}`);
-}
 
 class TestCase extends TestRunner {
   public readonly runner: string;
