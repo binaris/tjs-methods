@@ -1,10 +1,10 @@
 // tslint:disable
+import * as http from 'http';
 import * as Koa from 'koa';
 import * as Router from 'koa-router';
-import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
-import * as errors from 'koa-json-error';
-import { validate } from './koaMW';
+import { ValidationError } from './common';
+import { validateClass } from './serverCommon';
 import {
   schema,
   InternalServerError,
@@ -32,19 +32,16 @@ export type Context = {{{serverContext}}};
 {{#classes}}
 {{^attributes}}
 export interface {{name}}Handler {
-  {{#attributes}}
-  readonly {{name}}: {{{type}}};
-  {{/attributes}}
   {{#serverOnlyContext}}extractContext(ctx: Koa.Context): Promise<ServerOnlyContext>;{{/serverOnlyContext}}
   {{#methods}}
-  {{name}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{{name}}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 
 export class {{name}}Router {
   public static readonly methods = [
     {{#methods}}
-    '{{name}}',
+    '{{{name}}}',
     {{/methods}}
   ];
 
@@ -52,28 +49,22 @@ export class {{name}}Router {
   public readonly koaRouter: Router;
 
   constructor(
-    protected readonly handler: {{name}}Handler,
+    protected readonly handler: {{{name}}}Handler,
     stackTraceInError = false,
   ) {
     this.koaRouter = new Router();
-
-    this.koaRouter.use(errors({
-      postFormat: (e, { stack, knownError, name, ...rest }) => {
-        const base = stackTraceInError ? { stack } : {};
-        name = knownError ? name : 'InternalServerError';
-        return { ...base, ...rest, name };
-      },
-    }));
     this.koaRouter.use(bodyParser());
-    this.koaRouter.post('/:method', validate(schema, '{{name}}'));
+    const validator = validateClass(schema, '{{{name}}}');
 
     {{#methods}}
-    this.koaRouter.post('/{{name}}', async (ctx) => {
-      const { context: clientContextFromBody, args } = (ctx.request as any).body;
-      const params = this.props.{{name}}.properties.params;
-      const method = this.handler.{{name}}.bind(this.handler);
+    this.koaRouter.post('/{{{name}}}', async (ctx) => {
+      ctx.set('Content-Type', 'application/json');
       try {
-        ctx.set('Content-Type', 'application/json');
+        validator('{{{name}}}', (ctx.request as any).body);
+        const { context: clientContextFromBody, args } = (ctx.request as any).body;
+        const params = this.props.{{{name}}}.properties.params;
+        const method = this.handler.{{{name}}}.bind(this.handler);
+
         {{#clientContext}}
         const clientContext = clientContextFromBody as ClientContext;
         {{/clientContext}}
@@ -94,19 +85,34 @@ export class {{name}}Router {
         {{^serverContext}}
         ctx.body = JSON.stringify(await method({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}}));
         {{/serverContext}}
-      } catch (err) {
-        {{#throws}}
-        if (err instanceof {{.}}) {
-          ctx.throw(500, 'Internal Server Error', {
-            ...err,
-            knownError: true,
-            expose: true,
-            name: '{{.}}',
-            message: err.message,
+      } catch (error) {
+        const { stack, message, ...rest } = error;
+        const processedError = stackTraceInError ? { stack: stack.toString(), ...rest } : rest;
+        if (error instanceof ValidationError) {
+          ctx.status = 400;
+          ctx.body = JSON.stringify({
+            name: 'ValidationError',
+            message,
+            errors: error.errors,
           });
+          return;
+        }
+        ctx.status = 500;
+        {{#throws}}
+        if (error instanceof {{{.}}}) {
+          ctx.body = JSON.stringify({
+            ...processedError,
+            message,
+            name: '{{{.}}}',
+          });
+          return;
         }
         {{/throws}}
-        throw err;
+        ctx.body = JSON.stringify({
+          ...processedError,
+          message,
+          name: 'InternalServerError',
+        });
       }
     });
     {{/methods}}
