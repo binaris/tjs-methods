@@ -25,7 +25,7 @@ const packageSpec = {
       '@types/node': '^10.12.6',
     },
   },
-  serverOnly: {
+  koaServerOnly: {
     dependencies: {
       '@types/koa': '^2.0.46',
       '@types/koa-bodyparser': '^5.0.1',
@@ -60,7 +60,7 @@ export interface Generator {
 }
 
 function getGenerator(runtime: Runtime, kind: string, framework: string): Generator {
-  const { base, serverOnly, nodeClientOnly } = packageSpec;
+  const { base, koaServerOnly, nodeClientOnly } = packageSpec;
   switch (runtime) {
     case Runtime.browser:
       return {
@@ -83,11 +83,20 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
         };
       } else if (kind === 'server' && framework === 'koa') {
         return {
-          pkg: merge(base, serverOnly),
+          pkg: merge(base, koaServerOnly),
           libs: ['common.ts', 'koaMW.ts'],
           templateNames: {
             'interfaces.ts': 'interfaces.ts',
-            'server.ts': 'server.ts',
+            'server-koa.ts': 'server.ts',
+          },
+        };
+      } else if (kind === 'server' && framework === 'binaris') {
+        return {
+          pkg: base,
+          libs: ['common.ts', 'serverCommon.ts'],
+          templateNames: {
+            'interfaces.ts': 'interfaces.ts',
+            'fn-binaris.ts': 'server.ts',
           },
         };
       }

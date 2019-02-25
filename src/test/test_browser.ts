@@ -1,21 +1,20 @@
 import test from 'ava';
-import { tmpdir } from 'os';
 import * as path from 'path';
-import * as rmrf from 'rmfr';
 import { launch } from 'puppeteer';
 import { spawn as origSpawn } from 'child_process';
-import { writeFile, mkdir, mkdtemp } from 'mz/fs';
+import { writeFile, mkdir } from 'mz/fs';
 import { spawn } from '../utils';
-import { pass } from './utils';
+import { pass, TestRunner } from './utils';
 
-class TestCase {
+class TestCase extends TestRunner {
   public readonly main: string;
   constructor(
-    public readonly dir: string,
+    dir: string,
     public readonly schema: string,
     public readonly handler: string,
     public readonly tester: string,
   ) {
+    super(dir);
     this.main = `
 import { AddressInfo } from 'net';
 import * as http from 'http';
@@ -52,7 +51,7 @@ main().catch((err) => {
     handler: string,
     tester: string,
   ) {
-    const dir = await mkdtemp(path.join(tmpdir(), 'concord-test-'), { encoding: 'utf8' });
+    const dir = await TestRunner.mkTmpdDir();
     const instance = new this(
       dir,
       schema,
@@ -210,19 +209,6 @@ main().catch((err) => {
     } finally {
       webpack.kill();
       server.kill();
-    }
-  }
-
-  public async cleanup() {
-    await rmrf(this.dir);
-  }
-
-  public async run(): Promise<void> {
-    try {
-      await this.setup();
-      await this.exec();
-    } finally {
-      await this.cleanup();
     }
   }
 }
