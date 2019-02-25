@@ -1,6 +1,6 @@
 // tslint:disable
 import { ValidationError } from './common';
-import { validateClass } from './serverCommon';
+import * as serverExec from './serverExec';
 import {
   schema,
   {{#exceptions}}
@@ -38,9 +38,15 @@ export class {{{name}}}Wrapper {
   {{#methods}}
 
   public static {{{name}}}(fn: {{{className}}}Handler['{{{name}}}']{{#serverOnlyContext}}, extractContext: ContextExtractor{{/serverOnlyContext}}, stackTraceInError: boolean = false) {
-    const validator = validateClass(schema, '{{{className}}}');
     return async (body: any, ctx: any) => {
-      const { status, body: responseBody, error } = {{> serverExec }}
+      const { status, body: responseBody, error } = await serverExec.exec{{{className}}}{{{name}}}(
+        body,
+        fn,
+        {{#serverOnlyContext}}
+        () => extractContext(ctx),
+        {{/serverOnlyContext}}
+        stackTraceInError,
+      );
       if (status === 500) {
         // tslint:disable-next-line:no-console
         console.error(error);

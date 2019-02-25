@@ -5,6 +5,7 @@ import * as Router from 'koa-router';
 import * as bodyParser from 'koa-bodyparser';
 import { ValidationError } from './common';
 import { validateClass } from './serverCommon';
+import * as serverExec from './serverExec';
 import {
   schema,
   InternalServerError,
@@ -62,8 +63,14 @@ export class {{name}}Router {
     {{#methods}}
     this.koaRouter.post('/{{{name}}}', async (ctx) => {
       const fn = this.handler.{{{name}}}.bind(this.handler);
-      const { body } = (ctx.request as any);
-      const { status, body: responseBody } = {{> serverExec }}
+      const { status, body: responseBody } = await serverExec.exec{{{className}}}{{{name}}}(
+        (ctx.request as any).body,
+        fn,
+        {{#serverOnlyContext}}
+        () => this.handler.extractContext(ctx),
+        {{/serverOnlyContext}}
+        stackTraceInError,
+      );
       ctx.status = status;
       ctx.set('Content-Type', 'application/json');
       ctx.body = JSON.stringify(responseBody);

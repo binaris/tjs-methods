@@ -97,6 +97,7 @@ export interface Test {
     'interfaces.ts',
     'server.ts',
     'serverCommon.ts',
+    'serverExec.ts',
   ]);
 
   expect(pkg.dependencies.koa).to.be.a('string');
