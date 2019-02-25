@@ -95,8 +95,8 @@ export interface Test {
   expect(Object.keys(code).sort()).to.eql([
     'common.ts',
     'interfaces.ts',
-    'koaMW.ts',
     'server.ts',
+    'serverCommon.ts',
   ]);
 
   expect(pkg.dependencies.koa).to.be.a('string');

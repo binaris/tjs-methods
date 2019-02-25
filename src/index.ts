@@ -138,7 +138,9 @@ export async function generate(
   const schema = tjs.generateSchema(program, '*', settings, paths);
   const spec = transform(schema);
   const templates = await Promise.all(Object.keys(templateNames).map((n) => readFile(tmplPath(n), 'utf-8')));
-  const rendered = templates.map((t) => mustache.render(t, spec));
+  const serverExec = await readFile(tmplPath('server-exec.ts.mustache'), 'utf-8');
+  const rendered = templates.map((t) => mustache.render(t, spec, { serverExec }));
+
   return {
     pkg,
     code: fromPairs(zip([...libs, ...Object.values(templateNames)], [...libContents, ...rendered])),

@@ -55,65 +55,18 @@ export class {{name}}Router {
     this.koaRouter = new Router();
     this.koaRouter.use(bodyParser());
     const validator = validateClass(schema, '{{{name}}}');
+    {{#serverOnlyContext}}
+    const extractContext = this.handler.extractContext.bind(this.handler);
+    {{/serverOnlyContext}}
 
     {{#methods}}
     this.koaRouter.post('/{{{name}}}', async (ctx) => {
+      const fn = this.handler.{{{name}}}.bind(this.handler);
+      const { body } = (ctx.request as any);
+      const { status, body: responseBody } = {{> serverExec }}
+      ctx.status = status;
       ctx.set('Content-Type', 'application/json');
-      try {
-        validator('{{{name}}}', (ctx.request as any).body);
-        const { context: clientContextFromBody, args } = (ctx.request as any).body;
-        const params = this.props.{{{name}}}.properties.params;
-        const method = this.handler.{{{name}}}.bind(this.handler);
-
-        {{#clientContext}}
-        const clientContext = clientContextFromBody as ClientContext;
-        {{/clientContext}}
-        {{^clientContext}}
-        const clientContext = {};
-        {{/clientContext}}
-        {{#serverOnlyContext}}
-        const serverOnlyContext = await this.handler.extractContext(ctx);
-        {{/serverOnlyContext}}
-        {{^serverOnlyContext}}
-        const serverOnlyContext = {};
-        {{/serverOnlyContext}}
-        const context = { ...clientContext, ...serverOnlyContext };
-        ctx.state.context = context;
-        {{#serverContext}}
-        ctx.body = JSON.stringify(await method(context{{#parameters}}, args.{{{name}}}{{/parameters}}));
-        {{/serverContext}}
-        {{^serverContext}}
-        ctx.body = JSON.stringify(await method({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}}));
-        {{/serverContext}}
-      } catch (error) {
-        const { stack, message, ...rest } = error;
-        const processedError = stackTraceInError ? { stack: stack.toString(), ...rest } : rest;
-        if (error instanceof ValidationError) {
-          ctx.status = 400;
-          ctx.body = JSON.stringify({
-            name: 'ValidationError',
-            message,
-            errors: error.errors,
-          });
-          return;
-        }
-        ctx.status = 500;
-        {{#throws}}
-        if (error instanceof {{{.}}}) {
-          ctx.body = JSON.stringify({
-            ...processedError,
-            message,
-            name: '{{{.}}}',
-          });
-          return;
-        }
-        {{/throws}}
-        ctx.body = JSON.stringify({
-          ...processedError,
-          message,
-          name: 'InternalServerError',
-        });
-      }
+      ctx.body = JSON.stringify(responseBody);
     });
     {{/methods}}
   }
