@@ -84,6 +84,7 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
           templateNames: {
             'interfaces.ts': 'interfaces.ts',
             'server-koa.ts': 'server.ts',
+            'server-exec.ts.mustache': 'serverExec.ts',
           },
         };
       } else if (kind === 'server' && framework === 'binaris') {
@@ -93,6 +94,7 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
           templateNames: {
             'interfaces.ts': 'interfaces.ts',
             'fn-binaris.ts': 'server.ts',
+            'server-exec.ts.mustache': 'serverExec.ts',
           },
         };
       }
@@ -138,8 +140,7 @@ export async function generate(
   const schema = tjs.generateSchema(program, '*', settings, paths);
   const spec = transform(schema);
   const templates = await Promise.all(Object.keys(templateNames).map((n) => readFile(tmplPath(n), 'utf-8')));
-  const serverExec = await readFile(tmplPath('server-exec.ts.mustache'), 'utf-8');
-  const rendered = templates.map((t) => mustache.render(t, spec, { serverExec }));
+  const rendered = templates.map((t) => mustache.render(t, spec));
 
   return {
     pkg,

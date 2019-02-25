@@ -1,68 +1,110 @@
-await (async () => {
-        try {
-          validator('{{{name}}}', body);
-          const { context: clientContextFromBody, args } = body;
+import { ValidationError } from './common';
+import { validateClass } from './serverCommon';
+import {
+  schema,
+  InternalServerError,
+  {{#exceptions}}
+  {{name}},
+  {{/exceptions}}
+  {{#classes}}
+  {{name}},
+  {{/classes}}
+  {{#enums}}
+  {{name}},
+  {{/enums}}
+  {{#bypassTypes}}
+  {{name}},
+  {{/bypassTypes}}
+} from './interfaces';
 
-          {{#clientContext}}
-          const clientContext = clientContextFromBody as ClientContext;
-          {{/clientContext}}
-          {{^clientContext}}
-          const clientContext = {};
-          {{/clientContext}}
-          {{#serverOnlyContext}}
-          const serverOnlyContext = await extractContext(ctx);
-          {{/serverOnlyContext}}
-          {{^serverOnlyContext}}
-          const serverOnlyContext = {};
-          {{/serverOnlyContext}}
-          const context = { ...clientContext, ...serverOnlyContext };
-          {{#serverContext}}
-          return {
-           status: 200,
-           body: await fn(context{{#parameters}}, args.{{{name}}}{{/parameters}}),
-          };
-          {{/serverContext}}
-          {{^serverContext}}
-          return {
-            status: 200,
-            body: await fn({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}}),
-          };
-          {{/serverContext}}
-        } catch (error) {
-          const { stack, message, ...rest } = error;
-          const processedError = stackTraceInError ? { stack: stack.toString(), ...rest } : rest;
-          if (error instanceof ValidationError) {
-            return {
-              status: 400,
-              error,
-              body: {
-                name: 'ValidationError',
-                message,
-                errors: error.errors,
-              },
-            };
-          }
-          {{#throws}}
-          if (error instanceof {{{.}}}) {
-            return {
-              status: 500,
-              error,
-              body: {
-                ...processedError,
-                message,
-                name: '{{{.}}}',
-              },
-            };
-          }
-          {{/throws}}
-          return {
-            status: 500,
-            error,
-            body: {
-              ...processedError,
-              message,
-              name: 'InternalServerError',
-            },
-          };
-        }
-      })();
+{{#serverOnlyContext}}
+
+export { ServerOnlyContext };
+export type ContextExtractor = () => Promise<ServerOnlyContext>;
+{{/serverOnlyContext}}
+{{#serverContext}}
+export type Context = {{{serverContext}}};
+{{/serverContext}}
+{{#classes}}
+{{^attributes}}
+
+const {{{name}}}Validator = validateClass(schema, '{{{name}}}');
+
+export interface {{{name}}}Handler {
+  {{#methods}}
+  {{{name}}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{/methods}}
+}
+{{#methods}}
+
+export async function exec{{{className}}}{{{name}}}(body: any, fn: {{{className}}}Handler['{{{name}}}']{{#serverOnlyContext}}, extractContext: ContextExtractor{{/serverOnlyContext}}, stackTraceInError: boolean = false) {
+  try {
+    {{{className}}}Validator('{{{name}}}', body);
+    const { context: clientContextFromBody, args } = body;
+
+    {{#clientContext}}
+    const clientContext = clientContextFromBody as ClientContext;
+    {{/clientContext}}
+    {{^clientContext}}
+    const clientContext = {};
+    {{/clientContext}}
+    {{#serverOnlyContext}}
+    const serverOnlyContext = await extractContext();
+    {{/serverOnlyContext}}
+    {{^serverOnlyContext}}
+    const serverOnlyContext = {};
+    {{/serverOnlyContext}}
+    const context = { ...clientContext, ...serverOnlyContext };
+    {{#serverContext}}
+    return {
+      status: 200,
+      body: await fn(context{{#parameters}}, args.{{{name}}}{{/parameters}}),
+    };
+    {{/serverContext}}
+    {{^serverContext}}
+    return {
+      status: 200,
+      body: await fn({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}}),
+    };
+    {{/serverContext}}
+  } catch (error) {
+    const { stack, message, ...rest } = error;
+    const processedError = stackTraceInError ? { stack: stack.toString(), ...rest } : rest;
+    if (error instanceof ValidationError) {
+      return {
+        status: 400,
+        error,
+        body: {
+          name: 'ValidationError',
+          message,
+          errors: error.errors,
+        },
+      };
+    }
+    {{#throws}}
+    if (error instanceof {{{.}}}) {
+      return {
+        status: 500,
+        error,
+        body: {
+          ...processedError,
+          message,
+          name: '{{{.}}}',
+        },
+      };
+    }
+    {{/throws}}
+    return {
+      status: 500,
+      error,
+      body: {
+        ...processedError,
+        message,
+        name: 'InternalServerError',
+      },
+    };
+  }
+}
+{{/methods}}
+{{/attributes}}
+{{/classes}}
