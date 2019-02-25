@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { tmpdir } from 'os';
 import * as rmrf from 'rmfr';
-import { mkdtemp, mkdir } from 'mz/fs';
+import { mkdtemp } from 'mz/fs';
 
 export async function pass(t, fn) {
   await fn();
