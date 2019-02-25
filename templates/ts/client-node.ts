@@ -79,6 +79,9 @@ export class {{name}}Client {
       ...options,
     };
 
+    const fetchImpl = mergedOptions.fetchImplementation || fetch;
+    delete mergedOptions.fetchImplementation;
+
     if (mergedOptions.timeoutMs) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), mergedOptions.timeoutMs);
@@ -87,8 +90,8 @@ export class {{name}}Client {
     }
 
     try {
-      const response = await (mergedOptions.fetchImplementation || fetch)(`${this.serverUrl}/{{name}}`, {
-        ...mergedOptions,
+      const response = await fetchImpl(`${this.serverUrl}/{{name}}`, {
+        ...mergedOptions as RequestInit,
         headers: {
           ...mergedOptions.headers,
           'Content-Type': 'application/json',
