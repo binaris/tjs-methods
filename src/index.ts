@@ -32,11 +32,7 @@ const packageSpec = {
       '@types/koa-router': '7.0.35',
       koa: '^2.5.1',
       'koa-bodyparser': '^4.2.1',
-      'koa-json-error': '^3.1.2',
       'koa-router': '^7.4.0',
-    },
-    devDependencies: {
-      '@types/koa-json-error': '^3.1.2',
     },
     // Only peer dependency and common in typescript packages
     // It's left as a peerDependency and not a dependency because it depends on node version
@@ -84,7 +80,7 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
       } else if (kind === 'server' && framework === 'koa') {
         return {
           pkg: merge(base, koaServerOnly),
-          libs: ['common.ts', 'koaMW.ts'],
+          libs: ['common.ts', 'serverCommon.ts'],
           templateNames: {
             'interfaces.ts': 'interfaces.ts',
             'server-koa.ts': 'server.ts',

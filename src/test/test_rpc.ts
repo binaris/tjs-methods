@@ -18,7 +18,6 @@ class TestCase {
     public readonly schema: string,
     public readonly handler: string,
     public readonly tester: string,
-    public readonly mw?: string,
     main?: string,
     public readonly dir = mktemp()
   ) {
@@ -27,13 +26,12 @@ import { AddressInfo } from 'net';
 import { TestServer } from './server';
 import { TestClient } from './client';
 import Handler from './handler';
-${this.mw ? "import mw from './mw';" : ''}
 import test from './test';
 
 async function main() {
   const h = new Handler();
 
-  const server = new TestServer(h, true${this.mw ? ', [mw]' : ''});
+  const server = new TestServer(h, true);
   const listener = await server.listen(0, '127.0.0.1');
   const { address, port } = (listener.address() as AddressInfo);
   const client = new TestClient('http://' + address + ':' + port);
@@ -54,9 +52,6 @@ main().catch((err) => {
     const schemaPath = path.join(this.dir, 'schema.ts');
     await writeFile(schemaPath, this.schema);
     await writeFile(path.join(this.dir, 'src', 'main.ts'), this.main);
-    if (this.mw) {
-      await writeFile(path.join(this.dir, 'src', 'mw.ts'), this.mw);
-    }
     await writeFile(path.join(this.dir, 'src', 'handler.ts'), this.handler);
     await writeFile(path.join(this.dir, 'src', 'test.ts'), `
 import { expect, use } from 'chai';
@@ -539,7 +534,7 @@ server.close();
 await expect(client.bar('heh')).to.eventually.be.rejectedWith(/connect ECONNREFUSED/);
 }
 `;
-  await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();
+  await new TestCase(dummySchema, '', tester, dummyMain).run();
 });
 
 test('rpc handles empty 500 responses', pass, async () => {
@@ -563,7 +558,7 @@ const client = new TestClient('http://' + address + ':' + port);
 await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 - sorry');
 }
 `;
-  await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();
+  await new TestCase(dummySchema, '', tester, dummyMain).run();
 });
 
 test('rpc handles non-json 500 responses', pass, async () => {
@@ -587,7 +582,7 @@ const client = new TestClient('http://' + address + ':' + port);
 await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 - Internal Server Error');
 }
 `;
-  await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();
+  await new TestCase(dummySchema, '', tester, dummyMain).run();
 });
 
 test('rpc throws 400 errors on validation issues', pass, async () => {
