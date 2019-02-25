@@ -57,7 +57,8 @@ main().catch((err) => {
 
   public async setup() {
     await writeFile(path.join(this.dir, 'schema.ts'), this.schema);
-    await spawn('node', [
+    await this.spawn(
+      'node',
       path.join(__dirname, '..', 'cli.js'),
       'node',
       'test@0.0.1',
@@ -67,10 +68,7 @@ main().catch((err) => {
       '--nocompile',
       '-o',
       '.',
-    ], {
-      cwd: this.dir,
-      stdio: 'inherit',
-    });
+    );
 
     await writeFile(path.join(this.dir, 'src', 'run.ts'), this.runner);
     await writeFile(path.join(this.dir, 'binaris.yml'), JSON.stringify({
@@ -91,35 +89,23 @@ import * as chaiAsPromised from 'chai-as-promised';
 use(chaiAsPromised);
 ${this.tester}`);
 
-    await spawn('npm', [
+    await this.spawn(
+      'npm',
       'install',
       'chai',
       'chai-as-promised',
       '@types/chai',
       '@types/chai-as-promised',
-    ], {
-      cwd: this.dir,
-      stdio: 'inherit',
-    });
+    );
 
-    await spawn('npm', ['install'], {
-      cwd: this.dir,
-      stdio: 'inherit',
-    });
+    await this.spawn('npm', 'install');
+    await this.spawn(this.inModules('tsc'));
+    await this.spawn(this.inModules('bn'), 'deploy', this.functionName);
+  }
 
-    await spawn(
-      path.join(__dirname, '..', '..', 'node_modules', '.bin', 'tsc'),
-      [], {
-      cwd: this.dir,
-      stdio: 'inherit',
-    });
-
-    await spawn(
-      path.join(__dirname, '..', '..', 'node_modules', '.bin', 'bn'),
-      ['deploy', this.functionName], {
-      cwd: this.dir,
-      stdio: 'inherit',
-    });
+  public async cleanup(): Promise<void> {
+    await this.spawn(this.inModules('bn'), 'remove', this.functionName);
+    await super.cleanup();
   }
 
   public async exec(): Promise<void> {

@@ -43,6 +43,7 @@ export class {{{name}}}Wrapper {
       try {
         validator(body);
         const { context: clientContextFromBody, args } = body;
+
         {{#clientContext}}
         const clientContext = clientContextFromBody as ClientContext;
         {{/clientContext}}
@@ -63,23 +64,8 @@ export class {{{name}}}Wrapper {
         return await fn({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}});
         {{/serverContext}}
       } catch (error) {
-        const { stack, ...rest } = error;
-        const err = stackTraceInError ? { stack: stack.toString(), ...rest } : rest;
-        {{#throws}}
-        if (error instanceof {{{.}}}) {
-          return new ctx.HTTPResponse({
-            statusCode: 500,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...err,
-              name: '{{{.}}}',
-              message: err.message,
-            }),
-          });
-        }
-        {{/throws}}
+        const { stack, message, ...rest } = error;
+        const processedError = stackTraceInError ? { stack: stack.toString(), ...rest } : rest;
         if (error instanceof ValidationError) {
           return new ctx.HTTPResponse({
             statusCode: 400,
@@ -88,20 +74,37 @@ export class {{{name}}}Wrapper {
             },
             body: JSON.stringify({
               name: 'ValidationError',
-              message: err.message,
-              errors: err.errors,
+              message,
+              errors: error.errors,
             }),
           });
         }
+        // tslint:disable-next-line:no-console
+        console.error(error);
+        {{#throws}}
+        if (error instanceof {{{.}}}) {
+          return new ctx.HTTPResponse({
+            statusCode: 500,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...processedError,
+              message,
+              name: '{{{.}}}',
+            }),
+          });
+        }
+        {{/throws}}
         return new ctx.HTTPResponse({
           statusCode: 500,
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            ...err,
+            ...processedError,
+            message,
             name: 'InternalServerError',
-            message: err.message,
           }),
         });
       }

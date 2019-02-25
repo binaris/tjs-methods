@@ -2,6 +2,7 @@ import * as path from 'path';
 import { tmpdir } from 'os';
 import * as rmrf from 'rmfr';
 import { mkdtemp } from 'mz/fs';
+import { spawn } from '../utils';
 
 export async function pass(t, fn) {
   await fn();
@@ -19,6 +20,17 @@ export class TestRunner {
 
   public static async mkTmpdDir(): Promise<string> {
     return mkdtemp(path.join(tmpdir(), 'concord-test-'), { encoding: 'utf8' });
+  }
+
+  public inModules(exec: string): string {
+    return path.join(__dirname, '..', '..', 'node_modules', '.bin', exec);
+  }
+
+  public spawn(cmd, ...args) {
+    return spawn(cmd, args, {
+      cwd: this.dir,
+      stdio: 'inherit',
+    });
   }
 
   public async setup(): Promise<void> {

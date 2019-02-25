@@ -262,7 +262,7 @@ Defining `returns: null | SomethingElse` on a method will compile to `Promise<nu
     const { ExampleWrapper } = require('./server');
     exports.handler = ExampleWrapper.add(async (a, b) => a + b);
     ```
-1. Export your binaris credentials (TODO: show how).
+1. Export your binaris credentials: `export BINARIS_ACCOUNT_ID=$(bn show accountId) BINARIS_API_KEY=$(bn show apiKey)`
 1. Deploy your function with `bn deploy add`.
 1. Create a test file
 
