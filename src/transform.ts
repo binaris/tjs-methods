@@ -88,6 +88,7 @@ export interface Parameter {
 
 export interface Method {
   name: string;
+  className: string; /* Useful to have in templates */
   parameters: Parameter[];
   returnType: string;
   throws: string[];
@@ -159,6 +160,7 @@ export function transformClassPair([className, { properties, required }]: Pair):
       const methRequired = method.properties.params.required || [];
       return {
         name: methodName,
+        className,
         parameters: params
         .sort(([n1], [n2]) => order.indexOf(n1) - order.indexOf(n2))
         .map(([paramName, param], i) => ({

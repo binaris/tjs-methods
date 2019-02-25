@@ -61,7 +61,7 @@ const argv = yargs
       .option('server', {
         type: 'string',
         alias: 's',
-        choices: ['koa'],
+        choices: ['koa', 'binaris'],
         describe: 'Server framework',
       })
     )

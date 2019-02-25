@@ -240,6 +240,7 @@ test('transform transforms a simple class with single method', pass, () => {
         attributes: [],
         methods: [
           {
+            className: 'Test',
             name: 'add',
             parameters: [
               {
@@ -381,6 +382,7 @@ test('transform transforms exceptions', pass, () => {
         attributes: [],
         methods: [
           {
+            className: 'Test',
             name: 'add',
             parameters: [
             ],

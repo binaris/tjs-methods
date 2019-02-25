@@ -88,7 +88,7 @@ concord node --publish --client fetch example-client@0.0.1 interface.ts
 
 ### Generating code for different runtimes
 The first positional argument given to the `concord` CLI is `runtime`, currently supported runtimes are `node` and `browser`.\
-The node `node` runtime supports a `koa` server and a `fetch` client.\
+The node `node` runtime supports `koa` and [binaris](binaris.com) servers and a `fetch` client.\
 Run `concord <runtime> --help` for more details.
 
 
@@ -248,6 +248,40 @@ export interface Example {
 When null is the only return type on a method, as in `returns: null`, it will compile to `Promise<void>`.
 
 Defining `returns: null | SomethingElse` on a method will compile to `Promise<null | SomethingElse>` return type.
+
+### Binaris backend
+1. Create a new directory.
+1. Switch to new directory.
+1. Run `bn create node8 add`.
+1. Create an `interface.ts` file as shown above.
+1. Generate your server code with `concord node --client fetch --server binaris example@0.0.1 interface.ts -o .` (the client is here for the sake of the example and is not required).
+1. Implement a handler:
+
+    *`function.js`*
+    ```js
+    const { ExampleWrapper } = require('./server');
+    exports.handler = ExampleWrapper.add(async (a, b) => a + b);
+    ```
+1. Export your binaris credentials (TODO: show how).
+1. Deploy your function with `bn deploy add`.
+1. Create a test file
+
+    *`test.js`*
+    ```js
+    const { ExampleClient } = require('./client');
+
+    async function main() {
+      const url = `https://run.binaris.com/v2/run/${process.env.BINARIS_ACCOUNT_ID}`;
+      const client = new ExampleClient(url, {
+        headers: {
+          'X-Binaris-Api-Key': process.env.BINARIS_API_KEY,
+        },
+      });
+      console.log('1 + 2 =', await client.add(1, 2));
+    }
+    main();
+    ```
+1. Run your test with `node test.js`, should print out `1 + 2 = 3` (That is if I can do math ;) ).
 
 ## Comparison to other tools
 #### OpenAPI (Swagger)
