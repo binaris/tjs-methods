@@ -1,7 +1,9 @@
-src/
+src/*.ts
+src/test/
 webpack-test/
 example/
 dist/test/
 .circleci/
-ts*
+tslint.yml
+tsconfig.json
 TODO.md
