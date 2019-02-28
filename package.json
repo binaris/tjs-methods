@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "lint": "tslint -p .",
-    "test": "ava --verbose --timeout 60s dist/test/**/test*.js"
+    "test": "ava --verbose --timeout 60s dist/test/**/test*.js",
+    "prepublishOnly": "rm -rf dist/ && npm run build"
   },
   "bin": {
     "concord": "./bin/concord"

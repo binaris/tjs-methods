@@ -9,7 +9,6 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "downlevelIteration": true,
-        "sourceMap": true,
         "strictNullChecks": true,
         "outDir": "dist"
     },
