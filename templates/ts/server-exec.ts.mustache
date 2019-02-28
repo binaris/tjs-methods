@@ -69,7 +69,7 @@ export async function exec{{{className}}}{{{name}}}(body: any, fn: {{{className}
     {{/serverContext}}
   } catch (error) {
     const { stack, message, ...rest } = error;
-    const processedError = stackTraceInError ? { stack: stack.toString(), ...rest } : rest;
+    const processedError = stackTraceInError ? { stack: stack ? stack.toString() : undefined, ...rest } : rest;
     if (error instanceof ValidationError) {
       return {
         status: 400,
