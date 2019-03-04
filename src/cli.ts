@@ -1,7 +1,6 @@
 import { format, promisify } from 'util';
 import * as glob from 'glob';
 import { randomBytes } from 'crypto';
-import { mkdir } from 'mz/fs';
 import * as path from 'path';
 import * as yargs from 'yargs';
 import * as rmrf from 'rmfr';

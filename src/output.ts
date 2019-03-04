@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { merge } from 'lodash';
-import { mkdir, stat, exists, writeFile } from 'mz/fs';
+import { mkdir, exists, writeFile } from 'mz/fs';
 import { GeneratedCode, FrameworkMap, Runtime } from './types';
 import { spawn } from './utils';
 
