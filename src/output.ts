@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { merge } from 'lodash';
-import { mkdir, exists, writeFile } from 'mz/fs';
+import { mkdir, writeFile } from 'mz/fs';
 import { GeneratedCode, FrameworkMap, Runtime } from './types';
 import { spawn } from './utils';
 
@@ -40,17 +40,9 @@ export class TSOutput {
   protected npm: (...args: string[]) => Promise<number>;
   protected tsc: (...args: string[]) => Promise<number>;
 
-  protected constructor(protected readonly genPath: string) {
+  constructor(protected readonly genPath: string) {
     this.npm = (...args: string[]) => spawn('npm', args, { cwd: genPath, stdio: 'inherit' });
-    this.tsc = (...args: string[]) => spawn('tsc', args, { cwd: this.genPath, stdio: 'inherit' });
-  }
-
-  public static async create(genPath) {
-    const dirExists = await exists(genPath);
-    if (dirExists) {
-      throw new Error(`output dir: ${genPath} exists`);
-    }
-    return new this(genPath);
+    this.tsc = (...args: string[]) => spawn('tsc', args, { cwd: genPath, stdio: 'inherit' });
   }
 
   public async write(

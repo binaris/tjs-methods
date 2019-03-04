@@ -124,7 +124,7 @@ async function main({
 
   const genPath = output || mktemp();
   try {
-    const generator = await TSOutput.create(genPath);
+    const generator = new TSOutput(genPath);
     const generated = await generate(runtime, paths, { client, server });
     await generator.write(runtime, name, version, generated, { client, server });
     if (!noCompile) {
