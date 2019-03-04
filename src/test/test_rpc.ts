@@ -48,18 +48,8 @@ main().catch((err) => {
 
   public async setup() {
     await mkdir(this.dir);
-    await mkdir(path.join(this.dir, 'src'));
-    const schemaPath = path.join(this.dir, 'schema.ts');
-    await writeFile(schemaPath, this.schema);
-    await writeFile(path.join(this.dir, 'src', 'main.ts'), this.main);
-    await writeFile(path.join(this.dir, 'src', 'handler.ts'), this.handler);
-    await writeFile(path.join(this.dir, 'src', 'test.ts'), `
-import { expect, use } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-
-use(chaiAsPromised);
-${this.tester}`);
-
+    const genDir = path.join(this.dir, 'gen');
+    await writeFile(path.join(this.dir, 'schema.ts'), this.schema);
     await spawn('node', [
       path.join(__dirname, '..', 'cli.js'),
       'node',
@@ -69,11 +59,20 @@ ${this.tester}`);
       '--server', 'koa',
       '--nocompile',
       '-o',
-      '.',
+      'gen',
     ], {
       cwd: this.dir,
       stdio: 'inherit',
     });
+
+    await writeFile(path.join(genDir, 'src', 'main.ts'), this.main);
+    await writeFile(path.join(genDir, 'src', 'handler.ts'), this.handler);
+    await writeFile(path.join(genDir, 'src', 'test.ts'), `
+import { expect, use } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+
+use(chaiAsPromised);
+${this.tester}`);
 
     await spawn('npm', [
       'install',
@@ -82,19 +81,19 @@ ${this.tester}`);
       '@types/chai',
       '@types/chai-as-promised',
     ], {
-      cwd: this.dir,
+      cwd: genDir,
       stdio: 'inherit',
     });
 
     await spawn('npm', ['install'], {
-      cwd: this.dir,
+      cwd: genDir,
       stdio: 'inherit',
     });
 
     await spawn(
       path.join(__dirname, '..', '..', 'node_modules', '.bin', 'tsc'),
       [], {
-      cwd: this.dir,
+      cwd: genDir,
       stdio: 'inherit',
     });
   }
@@ -104,7 +103,7 @@ ${this.tester}`);
   }
 
   public async exec(): Promise<{ stdout: string, stderr: string }> {
-    const testPath = path.join(this.dir, 'main.js');
+    const testPath = path.join(this.dir, 'gen', 'main.js');
     const [stdout, stderr] = await exec(`node ${testPath}`);
     return { stdout: stdout.toString(), stderr: stderr.toString() };
   }

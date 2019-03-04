@@ -22,6 +22,10 @@ export class TestRunner {
     return mkdtemp(path.join(tmpdir(), 'concord-test-'), { encoding: 'utf8' });
   }
 
+  public get genDir(): string {
+    return path.join(this.dir, 'gen');
+  }
+
   public inModules(exec: string): string {
     return path.join(__dirname, '..', '..', 'node_modules', '.bin', exec);
   }
@@ -29,6 +33,13 @@ export class TestRunner {
   public spawn(cmd, ...args) {
     return spawn(cmd, args, {
       cwd: this.dir,
+      stdio: 'inherit',
+    });
+  }
+
+  public spawnInGen(cmd, ...args) {
+    return spawn(cmd, args, {
+      cwd: this.genDir,
       stdio: 'inherit',
     });
   }
