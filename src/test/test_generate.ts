@@ -30,7 +30,6 @@ class TestCase {
   public async generate(frameworks: FrameworkMap): Promise<GeneratedCode> {
     await mkdir(this.dir);
     try {
-      await mkdir(path.join(this.dir, 'gen'));
       const schemaPath = path.join(this.dir, 'schema.ts');
       await writeFile(schemaPath, this.schema);
       await spawn('node', [
