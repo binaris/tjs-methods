@@ -2,7 +2,7 @@ import test from 'ava';
 import * as path from 'path';
 import { launch } from 'puppeteer';
 import { spawn as origSpawn } from 'child_process';
-import { writeFile, mkdir } from 'mz/fs';
+import { writeFile } from 'mz/fs';
 import { spawn } from '../utils';
 import { pass, TestRunner } from './utils';
 

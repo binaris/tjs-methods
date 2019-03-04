@@ -1,7 +1,6 @@
 import test from 'ava';
 import * as path from 'path';
 import { writeFile } from 'mz/fs';
-import { spawn } from '../utils';
 import { pass, TestRunner } from './utils';
 
 class TestCase extends TestRunner {
