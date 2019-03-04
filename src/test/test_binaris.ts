@@ -67,11 +67,11 @@ main().catch((err) => {
       '--server', 'binaris',
       '--nocompile',
       '-o',
-      '.',
+      'gen',
     );
 
-    await writeFile(path.join(this.dir, 'src', 'run.ts'), this.runner);
-    await writeFile(path.join(this.dir, 'binaris.yml'), JSON.stringify({
+    await writeFile(path.join(this.genDir, 'src', 'run.ts'), this.runner);
+    await writeFile(path.join(this.genDir, 'binaris.yml'), JSON.stringify({
       functions: {
         [this.functionName]: {
           file: 'handler.js',
@@ -81,8 +81,8 @@ main().catch((err) => {
         },
       },
     }));
-    await writeFile(path.join(this.dir, 'src', 'handler.ts'), this.handler);
-    await writeFile(path.join(this.dir, 'src', 'test.ts'), `
+    await writeFile(path.join(this.genDir, 'src', 'handler.ts'), this.handler);
+    await writeFile(path.join(this.genDir, 'src', 'test.ts'), `
 import { expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
@@ -98,9 +98,9 @@ ${this.tester}`);
       '@types/chai-as-promised',
     );
 
-    await this.spawn('npm', 'install');
-    await this.spawn(this.inModules('tsc'));
-    await this.spawn(this.inModules('bn'), 'deploy', this.functionName);
+    await this.spawnInGen('npm', 'install');
+    await this.spawnInGen(this.inModules('tsc'));
+    await this.spawnInGen(this.inModules('bn'), 'deploy', this.functionName);
   }
 
   public async cleanup(): Promise<void> {
@@ -109,11 +109,7 @@ ${this.tester}`);
   }
 
   public async exec(): Promise<void> {
-    await spawn(
-      'node', ['run.js'], {
-      cwd: this.dir,
-      stdio: 'inherit',
-    });
+    await this.spawnInGen('node', 'run.js');
   }
 }
 

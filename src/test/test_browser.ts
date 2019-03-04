@@ -62,12 +62,7 @@ main().catch((err) => {
   }
 
   public async setup() {
-    await mkdir(path.join(this.dir, 'server'));
-    await mkdir(path.join(this.dir, 'client'));
-    await mkdir(path.join(this.dir, 'server', 'src'));
     await writeFile(path.join(this.dir, 'schema.ts'), this.schema);
-    await writeFile(path.join(this.dir, 'server', 'src', 'main.ts'), this.main);
-    await writeFile(path.join(this.dir, 'server', 'src', 'handler.ts'), this.handler);
     await spawn('cp', [
       '-r',
       path.join(__dirname, '..', '..', 'webpack-test'),
@@ -98,6 +93,9 @@ main().catch((err) => {
       cwd: path.join(this.dir),
       stdio: 'inherit',
     });
+
+    await writeFile(path.join(this.dir, 'server', 'src', 'main.ts'), this.main);
+    await writeFile(path.join(this.dir, 'server', 'src', 'handler.ts'), this.handler);
 
     await spawn('npm', [
       'install',

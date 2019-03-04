@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { merge } from 'lodash';
-import { mkdir, stat, writeFile } from 'mz/fs';
+import { mkdir, stat, exists, writeFile } from 'mz/fs';
 import { GeneratedCode, FrameworkMap, Runtime } from './types';
 import { spawn } from './utils';
 
@@ -46,9 +46,9 @@ export class TSOutput {
   }
 
   public static async create(genPath) {
-    const st = await stat(genPath);
-    if (!st.isDirectory()) {
-      throw new Error(`output dir: ${genPath} is not a directory`);
+    const dirExists = await exists(genPath);
+    if (dirExists) {
+      throw new Error(`output dir: ${genPath} exists`);
     }
     return new this(genPath);
   }
@@ -60,6 +60,8 @@ export class TSOutput {
     { code, pkg: basePackage }: GeneratedCode,
     { client, server }: FrameworkMap
   ) {
+    await mkdir(this.genPath);
+
     try {
       await mkdir(path.join(this.genPath, 'src'));
     } catch (err) {

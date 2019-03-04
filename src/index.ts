@@ -1,10 +1,8 @@
 import { readFile } from 'mz/fs';
 import { isArray, zip, fromPairs, merge, mergeWith } from 'lodash';
-import * as glob from 'glob';
 import * as ts from 'typescript';
 import * as tjs from 'typescript-json-schema';
 import * as mustache from 'mustache';
-import { promisify } from 'util';
 import * as path from 'path';
 import { GeneratedCode, Package, FrameworkMap, Runtime } from './types';
 import { transform } from './transform';
@@ -105,10 +103,9 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
 
 export async function generate(
   runtime: Runtime,
-  filePattern: string,
+  paths: string[],
   frameworks: FrameworkMap
 ): Promise<GeneratedCode> {
-  const paths = await promisify(glob)(filePattern);
   const settings: tjs.PartialArgs = {
     required: true,
     noExtraProps: true,

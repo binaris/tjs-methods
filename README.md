@@ -27,7 +27,7 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
     ```
 1. Compile the schema.
     ```bash
-    mkdir -p ./generated && concord -o ./generated node --client fetch --server koa example@0.0.1 interface.ts
+    concord -o ./generated node --client fetch --server koa example@0.0.1 interface.ts
     ```
 1. Write the server code.
 
@@ -252,14 +252,14 @@ Defining `returns: null | SomethingElse` on a method will compile to `Promise<nu
 ### Binaris backend
 1. Create a new directory.
 1. Switch to new directory.
-1. Run `bn create node8 add`.
 1. Create an `interface.ts` file as shown above.
-1. Generate your server code with `concord node --client fetch --server binaris example@0.0.1 interface.ts -o .` (the client is here for the sake of the example and is not required).
+1. Generate your server code with `concord node --client fetch --server binaris example@0.0.1 interface.ts -o generated` (the client is here for the sake of the example and is not required).
+1. Run `bn create node8 add`.
 1. Implement a handler:
 
     *`function.js`*
     ```js
-    const { ExampleWrapper } = require('./server');
+    const { ExampleWrapper } = require('./generated/server');
     exports.handler = ExampleWrapper.add(async (a, b) => a + b);
     ```
 1. Export your binaris credentials: `export BINARIS_ACCOUNT_ID=$(bn show accountId) BINARIS_API_KEY=$(bn show apiKey)`
@@ -268,7 +268,7 @@ Defining `returns: null | SomethingElse` on a method will compile to `Promise<nu
 
     *`test.js`*
     ```js
-    const { ExampleClient } = require('./client');
+    const { ExampleClient } = require('./generated/client');
 
     async function main() {
       const url = `https://run.binaris.com/v2/run/${process.env.BINARIS_ACCOUNT_ID}`;

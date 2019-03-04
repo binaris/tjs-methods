@@ -1,4 +1,5 @@
-import { format } from 'util';
+import { format, promisify } from 'util';
+import * as glob from 'glob';
 import { randomBytes } from 'crypto';
 import { mkdir } from 'mz/fs';
 import * as path from 'path';
@@ -117,13 +118,15 @@ async function main({
       throw new Error('Must specify exactly one of (client or server) option with `publish`');
     }
   }
-  const genPath = output || mktemp();
-  if (genPath !== output) {
-    await mkdir(genPath);
+  const paths = await promisify(glob)(pattern);
+  if (paths.length === 0) {
+    throw new Error(`No paths found with pattern: ${pattern}`);
   }
+
+  const genPath = output || mktemp();
   try {
     const generator = await TSOutput.create(genPath);
-    const generated = await generate(runtime, pattern, { client, server });
+    const generated = await generate(runtime, paths, { client, server });
     await generator.write(runtime, name, version, generated, { client, server });
     if (!noCompile) {
       await generator.compile();
