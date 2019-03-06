@@ -215,11 +215,11 @@ export interface Example {
   add: {
     params: {
       /**
-      * @minmum 0
+      * @minimum 0
       */
       a: integer;
       /**
-      * @minmum 0
+      * @minimum 0
       */
       b: integer;
     };
