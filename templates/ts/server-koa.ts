@@ -63,7 +63,7 @@ export class {{name}}Router {
     {{#methods}}
     this.koaRouter.post('/{{{name}}}', async (ctx) => {
       const fn = this.handler.{{{name}}}.bind(this.handler);
-      const { status, body: responseBody } = await serverExec.exec{{{className}}}{{{name}}}(
+      const { status, body: responseBody, context } = await serverExec.exec{{{className}}}{{{name}}}(
         (ctx.request as any).body,
         fn,
         {{#serverOnlyContext}}
@@ -73,6 +73,7 @@ export class {{name}}Router {
       );
       ctx.status = status;
       ctx.set('Content-Type', 'application/json');
+      ctx.state.context = context;
       ctx.body = JSON.stringify(responseBody);
     });
     {{/methods}}
