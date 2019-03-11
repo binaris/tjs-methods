@@ -399,12 +399,42 @@ public async hello({ ip }: Context, name: string): Promise<string> {
   const tester = `
 import { TestClient } from './client';
 
-export default async function test(client: TestClient) {
+export default async function test(client: TestClient, calls: any[]) {
 const result = await client.hello('vova');
 expect(result).to.equal('Hello, vova from test');
+expect(calls[0].ip).to.equal('test');
 }
 `;
-  await new TestCase(schema, handler, tester).run();
+  const main = `
+import { AddressInfo } from 'net';
+import { TestServer } from './server';
+import { TestClient } from './client';
+import Handler from './handler';
+import test from './test';
+
+async function main() {
+  const h = new Handler();
+
+  let calls: any[] = [];
+  const server = new TestServer(h, true, (app) => {
+    app.use(async (ctx, next) => {
+      await next();
+      calls.push(ctx.state.context);
+    });
+  });
+  const listener = await server.listen(0, '127.0.0.1');
+  const { address, port } = (listener.address() as AddressInfo);
+  const client = new TestClient('http://' + address + ':' + port);
+  await test(client, calls);
+  process.exit(0);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+`;
+  await new TestCase(schema, handler, tester, main).run();
 });
 
 test('rpc supports the ClientContext interface', pass, async () => {
