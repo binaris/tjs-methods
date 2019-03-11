@@ -64,9 +64,9 @@ export class {{name}}Router {
     const extractContext = this.handler.extractContext.bind(this.handler);
     {{/serverOnlyContext}}
 
-    this.koaRouter.post('/:method', (_ctx, next) => next());
     {{#methods}}
     this.koaRouter.post('/{{{name}}}', async (ctx) => {
+      ctx.state.method = '{{{name}}}';
       const fn = this.handler.{{{name}}}.bind(this.handler);
       const { status, body: responseBody, context } = await serverExec.exec{{{className}}}{{{name}}}(
         (ctx.request as any).body,
