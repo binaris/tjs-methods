@@ -388,7 +388,7 @@ import { Context } from './server';
 
 export default class Handler {
 public async extractContext(_: koa.Context): Promise<Context> {
-  return { ip: 'test' };
+  return { ip: 'testip' };
 }
 
 public async hello({ ip }: Context, name: string): Promise<string> {
@@ -401,8 +401,9 @@ import { TestClient } from './client';
 
 export default async function test(client: TestClient, calls: any[]) {
 const result = await client.hello('vova');
-expect(result).to.equal('Hello, vova from test');
-expect(calls[0].ip).to.equal('test');
+expect(result).to.equal('Hello, vova from testip');
+expect(calls[0].context.ip).to.equal('testip');
+expect(calls[0].method).to.equal('hello');
 }
 `;
   const main = `
@@ -419,7 +420,7 @@ async function main() {
   const server = new TestServer(h, true, (app) => {
     app.use(async (ctx, next) => {
       await next();
-      calls.push(ctx.state.context);
+      calls.push({ context: ctx.state.context, method: ctx.params.method });
     });
   });
   const listener = await server.listen(0, '127.0.0.1');
