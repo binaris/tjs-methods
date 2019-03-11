@@ -422,7 +422,7 @@ async function main() {
   const app = new Koa();
   app.use(async (ctx, next) => {
     await next();
-    calls.push({ context: ctx.state.context, method: ctx.params.method });
+    calls.push({ context: ctx.state.context, method: ctx.state.method });
   });
   const router = new TestRouter(h, true);
   app.use(router.koaRouter.routes());
