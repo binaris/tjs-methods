@@ -23,6 +23,10 @@ import {
   {{/bypassTypes}}
 } from './interfaces';
 
+export {
+  ValidationError,
+};
+
 {{#serverOnlyContext}}
 export { ServerOnlyContext };
 {{/serverOnlyContext}}
