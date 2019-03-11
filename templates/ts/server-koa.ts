@@ -91,11 +91,9 @@ export class {{name}}Server {
 
   public constructor(
     protected readonly handler: {{name}}Handler,
-    stackTraceInError = false,
-    initializeApp: (app: Koa) => void = () => {}
+    stackTraceInError = false
   ) {
     this.app = new Koa();
-    initializeApp(this.app);
     this.router = new {{name}}Router(handler, stackTraceInError);
 
     this.app.use(this.router.koaRouter.routes());
