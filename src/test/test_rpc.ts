@@ -408,23 +408,32 @@ expect(calls[0].method).to.equal('hello');
 `;
   const main = `
 import { AddressInfo } from 'net';
-import { TestServer } from './server';
 import { TestClient } from './client';
+import { TestRouter } from './server';
 import Handler from './handler';
 import test from './test';
+import * as Koa from 'koa';
+import * as http from 'http';
 
 async function main() {
   const h = new Handler();
 
   let calls: any[] = [];
-  const server = new TestServer(h, true, (app) => {
-    app.use(async (ctx, next) => {
-      await next();
-      calls.push({ context: ctx.state.context, method: ctx.params.method });
-    });
+  const app = new Koa();
+  app.use(async (ctx, next) => {
+    await next();
+    calls.push({ context: ctx.state.context, method: ctx.params.method });
   });
-  const listener = await server.listen(0, '127.0.0.1');
-  const { address, port } = (listener.address() as AddressInfo);
+  const router = new TestRouter(h, true);
+  app.use(router.koaRouter.routes());
+  app.use(router.koaRouter.allowedMethods());
+
+  const server = http.createServer(app.callback());
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', resolve);
+    server.once('error', reject);
+  });
+  const { address, port } = (server.address() as AddressInfo);
   const client = new TestClient('http://' + address + ':' + port);
   await test(client, calls);
   process.exit(0);
