@@ -64,6 +64,7 @@ export class {{name}}Router {
     const extractContext = this.handler.extractContext.bind(this.handler);
     {{/serverOnlyContext}}
 
+    this.koaRouter.post('/:method', (_ctx, next) => next());
     {{#methods}}
     this.koaRouter.post('/{{{name}}}', async (ctx) => {
       const fn = this.handler.{{{name}}}.bind(this.handler);
