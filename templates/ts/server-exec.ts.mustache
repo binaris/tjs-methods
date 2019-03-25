@@ -41,7 +41,7 @@ export async function exec{{{className}}}{{{name}}}(body: any, fn: {{{className}
   let context: {{#serverContext}}Context{{/serverContext}}{{^serverContext}}{}{{/serverContext}} | undefined;
   try {
     {{{className}}}Validator('{{{name}}}', body);
-    const { context: clientContextFromBody, args } = body;
+    const { ctx: clientContextFromBody, ...args } = body;
 
     {{#clientContext}}
     const clientContext = clientContextFromBody as ClientContext;

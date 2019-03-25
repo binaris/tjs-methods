@@ -1,10 +1,23 @@
-import { isPlainObject } from 'lodash';
-import { createClassValidator, createInterfaceValidator, ValidationError } from './common';
+import { fromPairs, isPlainObject, merge } from 'lodash';
+import { createClassValidator, ValidationError } from './common';
 
 export function validateClass(schema: { definitions: any }, className: string) {
-  const contextValidator = schema.definitions.ClientContext
-    ? createInterfaceValidator(schema, 'ClientContext') : undefined;
-  const validators = createClassValidator(schema, className, 'params');
+  const overrides: any = schema.definitions.ClientContext
+    ? fromPairs(Object.keys(schema.definitions[className].properties).map((method: string) => [
+      method, {
+        properties: {
+          params: {
+            properties: {
+              ctx: { $ref: '#/definitions/ClientContext' },
+            },
+          },
+        },
+      },
+    ]))
+  : {};
+  const schemaWithContextParam = merge({}, schema, { definitions: { [className]: { properties: overrides } } });
+  const validators = createClassValidator(schemaWithContextParam, className, 'params');
+
   return (method: string, body: any): void => {
     const validator = validators[method];
     if (!validator) {
@@ -14,12 +27,7 @@ export function validateClass(schema: { definitions: any }, className: string) {
       throw new ValidationError('Bad Request', [{ message: 'Could not parse body', method }]);
     }
 
-    const { context, args } = body;
-
-    if (contextValidator && !contextValidator(context)) {
-      throw new ValidationError('Bad Request', contextValidator.errors);
-    }
-    if (!validator(args)) {
+    if (!validator(body)) {
       throw new ValidationError('Bad Request', validator.errors);
     }
   };

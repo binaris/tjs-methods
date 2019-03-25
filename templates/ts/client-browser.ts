@@ -66,14 +66,12 @@ export class {{name}}Client {
 
   public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}, {{/parameters}}options?: Options): Promise<{{{returnType}}}> {
     const body = {
-      args: {
-        {{#parameters}}
-        {{name}},
-        {{/parameters}}
-      },
       {{#clientContext}}
-      context: ctx,
+      ctx,
       {{/clientContext}}
+      {{#parameters}}
+      {{name}},
+      {{/parameters}}
     };
 
     const mergedOptions = {
