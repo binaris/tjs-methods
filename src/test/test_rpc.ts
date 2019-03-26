@@ -662,6 +662,33 @@ export default async function test(client: TestClient) {
   await new TestCase(dummySchema, handler, tester).run();
 });
 
+test('rpc supports old protocol', pass, async () => {
+  const handler = `
+export default class Handler {
+  public async bar(name: string): Promise<string> {
+    return 'Hello, ' + name;
+  }
+}
+`;
+  const tester = `
+import fetch from 'node-fetch';
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+  const url = (client as any /* access protected member */).serverUrl;
+  const res = await fetch(url + '/bar', {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ args: { a: 'heh' } }),
+    method: 'POST',
+  });
+  expect(await res.json()).to.eql('Hello, heh');
+}
+`;
+  await new TestCase(dummySchema, handler, tester).run();
+});
+
 test('rpc supports custom headers', pass, async () => {
   const schema = `
 export interface ServerOnlyContext {
