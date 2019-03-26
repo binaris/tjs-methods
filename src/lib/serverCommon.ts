@@ -27,6 +27,15 @@ export function validateClass(schema: { definitions: any }, className: string) {
       throw new ValidationError('Bad Request', [{ message: 'Could not parse body', method }]);
     }
 
+    const { context, args, ...rest } = body;
+    if (args && Object.keys(rest).length === 0) {
+      delete body.args;
+      Object.assign(body, args);
+      if (context) {
+        body.ctx = context;
+        delete body.context;
+      }
+    }
     if (!validator(body)) {
       throw new ValidationError('Bad Request', validator.errors);
     }
