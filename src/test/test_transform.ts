@@ -451,3 +451,32 @@ test('trasform throws when passed string enum with invalid value', pass, () => {
     })
   ).to.throw(/^Unsupported enum value found \(does not match .+\): InvalidStringEnum$/);
 });
+
+test('transform throws when calling a param `ctx`', (t) => {
+  const schema = {
+    definitions: {
+      Test: {
+        properties: {
+          foo: {
+            type: 'object',
+            properties: {
+              params: {
+                type: 'object',
+                properties: {
+                  ctx: {
+                    type: 'integer',
+                  },
+                },
+                propertyOrder: ['ctx'],
+              },
+              returns: {
+                type: 'integer',
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  t.throws(() => transform(schema), /Invalid parameter name 'ctx' on interface 'Test'/);
+});

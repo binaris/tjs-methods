@@ -156,6 +156,10 @@ export function transformClassPair([className, { properties, required }]: Pair):
     .filter(([_, method]: Pair) => isMethod(method))
     .map(([methodName, method]: Pair): Method => {
       const params = Object.entries(method.properties.params.properties);
+      const paramNames = Object.keys(method.properties.params.properties);
+      if (paramNames.includes('ctx')) {
+        throw new Error(`Invalid parameter name 'ctx' on interface '${className}'`);
+      }
       const order = method.properties.params.propertyOrder;
       const methRequired = method.properties.params.required || [];
       return {
