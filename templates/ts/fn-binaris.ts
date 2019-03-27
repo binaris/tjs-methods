@@ -16,28 +16,32 @@ import {
   {{name}},
   {{/bypassTypes}}
 } from './interfaces';
+{{#globals}}
 {{#serverOnlyContext}}
 
 export { ServerOnlyContext };
-// TODO: type to binaris ctx when available
-export type ContextExtractor = (ctx: any) => Promise<ServerOnlyContext>;
 {{/serverOnlyContext}}
 {{#serverContext}}
 export type Context = {{{serverContext}}};
 {{/serverContext}}
+{{/globals}}
 {{#classes}}
 {{^attributes}}
+{{#serverOnlyContext}}
+// TODO: type to binaris ctx when available
+export type {{{name}}}ContextExtractor = (ctx: any) => Promise<{{{serverOnlyContext}}}>;
+{{/serverOnlyContext}}
 
 export interface {{{name}}}Handler {
   {{#methods}}
-  {{{name}}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{{name}}}({{#serverContext}}ctx: {{{serverContext}}}, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 
 export class {{{name}}}Wrapper {
   {{#methods}}
 
-  public static {{{name}}}(fn: {{{className}}}Handler['{{{name}}}']{{#serverOnlyContext}}, extractContext: ContextExtractor{{/serverOnlyContext}}, stackTraceInError: boolean = false) {
+  public static {{{name}}}(fn: {{{className}}}Handler['{{{name}}}']{{#serverOnlyContext}}, extractContext: {{{className}}}ContextExtractor{{/serverOnlyContext}}, stackTraceInError: boolean = false) {
     return async (body: any, ctx: any) => {
       const { status, body: responseBody, error } = await serverExec.exec{{{className}}}{{{name}}}(
         body,

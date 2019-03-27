@@ -2,13 +2,15 @@ import { fromPairs, isPlainObject, merge } from 'lodash';
 import { createClassValidator, ValidationError } from './common';
 
 export function validateClass(schema: { definitions: any }, className: string) {
-  const overrides: any = schema.definitions.ClientContext
-    ? fromPairs(Object.keys(schema.definitions[className].properties).map((method: string) => [
+  const props = schema.definitions[className].properties;
+  const clientContext = props.clientContext || schema.definitions.ClientContext;
+  const overrides: any = clientContext
+    ? fromPairs(Object.keys(props).map((method: string) => [
       method, {
         properties: {
           params: {
             properties: {
-              ctx: { $ref: '#/definitions/ClientContext' },
+              ctx: clientContext,
             },
           },
         },

@@ -35,9 +35,11 @@ export interface Options extends Pick<RequestInit,
   headers?: Record<string, string>;
 }
 
+{{#globals}}
 {{#clientContext}}
 export type Context = ClientContext;
 {{/clientContext}}
+{{/globals}}
 
 {{#classes}}
 {{^attributes}}

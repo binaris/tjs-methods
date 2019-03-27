@@ -485,41 +485,237 @@ expect(result).to.equal('Hello, vova d 666');
 test('rpc supports the combination of ClientContext and ServerOnlyContext', pass, async () => {
   const schema = `
 export interface ClientContext {
-debugId: string;
+  debugId: string;
 }
 
 export interface ServerOnlyContext {
-ip: string;
+  ip: string;
 }
 
 export interface Test {
-hello: {
-  params: {
-    name: string;
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
   };
-  returns: string;
-};
 }`;
   const handler = `
 import * as koa from 'koa';
 import { Context, ServerOnlyContext } from './server';
 
 export default class Handler {
-public async extractContext(_: koa.Context): Promise<ServerOnlyContext> {
-  return { ip: 'test' };
-}
+  public async extractContext(_: koa.Context): Promise<ServerOnlyContext> {
+    return { ip: 'test' };
+  }
 
-public async hello({ debugId, ip }: Context, name: string): Promise<string> {
-  return 'Hello, ' + name + ' d ' + debugId + ' from ' + ip;
-}
+  public async hello({ debugId, ip }: Context, name: string): Promise<string> {
+    return 'Hello, ' + name + ' d ' + debugId + ' from ' + ip;
+  }
 }
 `;
   const tester = `
 import { TestClient, Context } from './client';
 
 export default async function test(client: TestClient) {
-const result = await client.hello({ debugId: '666' } as Context, 'vova');
-expect(result).to.equal('Hello, vova d 666 from test');
+  const result = await client.hello({ debugId: '666' } as Context, 'vova');
+  expect(result).to.equal('Hello, vova d 666 from test');
+}
+`;
+  await new TestCase(schema, handler, tester).run();
+});
+
+test('rpc supports custom ClientContext and ServerOnlyContext', pass, async () => {
+  const schema = `
+export interface ClientContext {
+  debugId: string;
+}
+
+export interface ServerOnlyContext {
+  ip: string;
+}
+
+export interface CustomClientContext {
+  a: string;
+}
+
+export interface CustomServerOnlyContext {
+  b: string;
+}
+
+export interface Test {
+  clientContext: CustomClientContext;
+  serverOnlyContext: CustomServerOnlyContext;
+
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
+  };
+}`;
+  const handler = `
+import * as koa from 'koa';
+import { CustomClientContext, CustomServerOnlyContext } from './interfaces';
+
+// TODO: generated code should export this type somehow
+type Context = CustomClientContext & CustomServerOnlyContext;
+
+export default class Handler {
+  public async extractContext(_: koa.Context): Promise<CustomServerOnlyContext> {
+    return { b: 'lets' };
+  }
+
+  public async hello({ a, b }: Context, name: string): Promise<string> {
+    return ['hey', a, b, name].join(' ');
+  }
+}
+`;
+  const tester = `
+import { TestClient } from './client';
+import { CustomClientContext } from './interfaces';
+
+export default async function test(client: TestClient) {
+  const result = await client.hello({ a: 'ho' }, 'go');
+  expect(result).to.equal('hey ho lets go');
+}
+`;
+  await new TestCase(schema, handler, tester).run();
+});
+
+test('rpc supports turning off both ServerOnlyContext and ClientContext', pass, async () => {
+  const schema = `
+export interface ClientContext {
+  debugId: string;
+}
+
+export interface ServerOnlyContext {
+  ip: string;
+}
+
+export interface Test {
+  clientContext: false;
+  serverOnlyContext: false;
+
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
+  };
+}`;
+  const handler = `
+import * as koa from 'koa';
+
+export default class Handler {
+  public async hello(name: string): Promise<string> {
+    return ['Hello,', name].join(' ');
+  }
+}
+`;
+  const tester = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+  const result = await client.hello('Moe');
+  expect(result).to.equal('Hello, Moe');
+}
+`;
+  await new TestCase(schema, handler, tester).run();
+});
+
+test('rpc supports turning off ServerOnlyContext with custom ClientContext', pass, async () => {
+  const schema = `
+export interface ClientContext {
+  debugId: string;
+}
+
+export interface ServerOnlyContext {
+  ip: string;
+}
+
+export interface CustomClientContext {
+  greeting: string;
+}
+
+export interface Test {
+  clientContext: CustomClientContext;
+  serverOnlyContext: false;
+
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
+  };
+}`;
+  const handler = `
+import * as koa from 'koa';
+import { CustomClientContext } from './interfaces';
+
+export default class Handler {
+  public async hello({ greeting }: CustomClientContext, name: string): Promise<string> {
+    return [greeting, name].join(' ');
+  }
+}
+`;
+  const tester = `
+import { TestClient } from './client';
+import { CustomClientContext } from './interfaces';
+
+export default async function test(client: TestClient) {
+  const result = await client.hello({ greeting: 'hey' }, 'joe');
+  expect(result).to.equal('hey joe');
+}
+`;
+  await new TestCase(schema, handler, tester).run();
+});
+
+test('rpc supports turning off ClientContext with custom ServerOnlyContext', pass, async () => {
+  const schema = `
+export interface ClientContext {
+  debugId: string;
+}
+
+export interface ServerOnlyContext {
+  ip: string;
+}
+
+export interface CustomServerOnlyContext {
+  b: string;
+}
+
+export interface Test {
+  clientContext: false;
+  serverOnlyContext: CustomServerOnlyContext;
+
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
+  };
+}`;
+  const handler = `
+import * as koa from 'koa';
+import { CustomServerOnlyContext } from './interfaces';
+
+export default class Handler {
+  public async extractContext(_: koa.Context): Promise<CustomServerOnlyContext> {
+    return { b: 'lets' };
+  }
+
+  public async hello({ b }: CustomServerOnlyContext, name: string): Promise<string> {
+    return ['oh', 'no', b, name].join(' ');
+  }
+}
+`;
+  const tester = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+  const result = await client.hello('go');
+  expect(result).to.equal('oh no lets go');
 }
 `;
   await new TestCase(schema, handler, tester).run();

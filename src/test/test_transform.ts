@@ -93,6 +93,11 @@ test('typeToString transforms enum into pipe separated string', pass, () => {
   expect(result).to.equal('"a" | "b"');
 });
 
+test('typeToString transforms boolean enum with single value to that value', pass, () => {
+  const result = typeToString({ type: 'boolean', enum: [false] });
+  expect(result).to.equal('false');
+});
+
 test('typeToString transforms anyOf into pipe separated string', pass, () => {
   const result = typeToString({
     anyOf: [
@@ -164,7 +169,7 @@ test('typeToString transforms array with items as array into TS interface', pass
   expect(result).to.equal('[User, Date]');
 });
 
-test('transform transforms a simple class with single attribute', pass, () => {
+test('transform transforms a simple class with single attribute', (t) => {
   const schema = {
     definitions: {
       Test: {
@@ -177,7 +182,7 @@ test('transform transforms a simple class with single attribute', pass, () => {
     },
   };
   const result = transform(schema);
-  expect(result).to.eql({
+  t.deepEqual({
     schema: JSON.stringify(schema, undefined, 2),
     exceptions: [],
     classes: [
@@ -193,15 +198,17 @@ test('transform transforms a simple class with single attribute', pass, () => {
         methods: [],
       },
     ],
-    clientContext: undefined,
-    serverOnlyContext: undefined,
-    serverContext: undefined,
+    globals: {
+      clientContext: false,
+      serverOnlyContext: false,
+      serverContext: undefined,
+    },
     enums: [],
     bypassTypes: [],
-  });
+  }, result);
 });
 
-test('transform transforms a simple class with single method', pass, () => {
+test('transform transforms a simple class with single method', (t) => {
   const schema = {
     definitions: {
       Test: {
@@ -231,7 +238,7 @@ test('transform transforms a simple class with single method', pass, () => {
     },
   };
   const result = transform(schema);
-  expect(result).to.eql({
+  t.deepEqual({
     schema: JSON.stringify(schema, undefined, 2),
     exceptions: [],
     classes: [
@@ -262,12 +269,14 @@ test('transform transforms a simple class with single method', pass, () => {
         ],
       },
     ],
-    clientContext: undefined,
-    serverOnlyContext: undefined,
-    serverContext: undefined,
+    globals: {
+      clientContext: false,
+      serverOnlyContext: false,
+      serverContext: undefined,
+    },
     enums: [],
     bypassTypes: [],
-  });
+  }, result);
 });
 
 test('transform sorts output class by checking references', pass, () => {
@@ -325,7 +334,7 @@ test('transform sorts output class by checking references', pass, () => {
   expect(result.classes.map(({ name }) => name)).to.eql(['C', 'B', 'A']);
 });
 
-test('transform transforms exceptions', pass, () => {
+test('transform transforms exceptions', (t) => {
   const schema = {
     definitions: {
       Test: {
@@ -351,7 +360,7 @@ test('transform transforms exceptions', pass, () => {
     },
   };
   const result = transform(schema);
-  expect(result).to.eql({
+  t.deepEqual({
     schema: JSON.stringify(schema, undefined, 2),
     exceptions: [
       {
@@ -392,15 +401,17 @@ test('transform transforms exceptions', pass, () => {
         ],
       },
     ],
-    clientContext: undefined,
-    serverOnlyContext: undefined,
-    serverContext: undefined,
+    globals: {
+      clientContext: false,
+      serverOnlyContext: false,
+      serverContext: undefined,
+    },
     enums: [],
     bypassTypes: [],
-  });
+  }, result);
 });
 
-test('transform returns a context class when given a Context interface', pass, () => {
+test('transform returns a context class when given a Context interface', (t) => {
   const result = transform({
     definitions: {
       ClientContext: {
@@ -413,17 +424,7 @@ test('transform returns a context class when given a Context interface', pass, (
       },
     },
   });
-  expect(result.clientContext).to.eql({
-    name: 'ClientContext',
-    attributes: [
-      {
-        name: 'foo',
-        type: 'string',
-        optional: false,
-      },
-    ],
-    methods: [],
-  });
+  t.true(result.globals.clientContext);
 });
 
 test('transform throws when passed non string enum', pass, () => {

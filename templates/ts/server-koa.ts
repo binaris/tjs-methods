@@ -27,19 +27,20 @@ export {
   ValidationError,
 };
 
+{{#globals}}
 {{#serverOnlyContext}}
 export { ServerOnlyContext };
 {{/serverOnlyContext}}
 {{#serverContext}}
 export type Context = {{{serverContext}}};
 {{/serverContext}}
-
+{{/globals}}
 {{#classes}}
 {{^attributes}}
 export interface {{name}}Handler {
-  {{#serverOnlyContext}}extractContext(ctx: Koa.Context): Promise<ServerOnlyContext>;{{/serverOnlyContext}}
+  {{#serverOnlyContext}}extractContext(ctx: Koa.Context): Promise<{{{serverOnlyContext}}}>;{{/serverOnlyContext}}
   {{#methods}}
-  {{{name}}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{{name}}}({{#serverContext}}ctx: {{{serverContext}}}, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 
@@ -60,9 +61,6 @@ export class {{name}}Router {
     this.koaRouter = new Router();
     this.koaRouter.use(bodyParser());
     const validator = validateClass(schema, '{{{name}}}');
-    {{#serverOnlyContext}}
-    const extractContext = this.handler.extractContext.bind(this.handler);
-    {{/serverOnlyContext}}
 
     {{#methods}}
     this.koaRouter.post('/{{{name}}}', async (ctx) => {
