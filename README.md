@@ -92,9 +92,15 @@ The node `node` runtime supports `koa` and [binaris](binaris.com) servers and a 
 Run `concord <runtime> --help` for more details.
 
 
-### Calling with curl # TODO
+### Calling with curl
+```bash
+curl -X POST -H 'Content-Type: application/json' http://serverAddress:serverPort/add -d '{"a": 1, "b": 2}'
+```
 
-### Calling with httpie # TODO
+### Calling with httpie
+```bash
+http post http://server-address/add a:=1, b:=2
+```
 
 ### Object params
 Complex nested object types are supported.
