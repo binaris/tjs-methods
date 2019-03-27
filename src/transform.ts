@@ -95,22 +95,27 @@ export interface Method {
 }
 
 export interface ClassSpec {
+  name: string;
+  attributes: Array<{
     name: string;
-    attributes: Array<{
-      name: string;
-      type: string;
-      optional: boolean;
-    }>;
-    methods: Method[];
+    type: string;
+    optional: boolean;
+  }>;
+  methods: Method[];
+  clientContext?: string | false;
+  serverOnlyContext?: string | false;
+  serverContext?: string;
 }
 
 export interface ServiceSpec {
   schema: string;
   classes: ClassSpec[];
   exceptions: ClassSpec[];
-  clientContext?: ClassSpec;
-  serverOnlyContext?: ClassSpec;
-  serverContext?: string;
+  globals: {
+    clientContext: boolean;
+    serverOnlyContext: boolean;
+    serverContext?: string;
+  };
   bypassTypes?: Array<{ name: string; def: string; }>;
   enums?: Array<{ name: string; def: Array<{ key: string; value: string; }> }>;
 }
@@ -149,8 +154,37 @@ function isException(s): boolean {
   return ['name', 'message', 'stack'].every((p) => isString(props[p]));
 }
 
-export function transformClassPair([className, { properties, required }]: Pair): ClassSpec {
-  return {
+function maybeFalse(s: string): string | false {
+  if (s === 'false') {
+    return false;
+  }
+  return s;
+}
+
+export function transformClassPair(
+  className: string,
+  { properties, required }: { properties: any; required: string[] },
+  globalContext?: { clientContext: boolean; serverOnlyContext: boolean }
+): ClassSpec {
+  const contextPart: Pick<ClassSpec, 'clientContext' | 'serverOnlyContext' | 'serverContext'> = {};
+  if (properties.clientContext) {
+    contextPart.clientContext = maybeFalse(typeToString(properties.clientContext));
+  } else if (globalContext && globalContext.clientContext) {
+    contextPart.clientContext = 'ClientContext';
+  }
+  if (properties.serverOnlyContext) {
+    contextPart.serverOnlyContext = maybeFalse(typeToString(properties.serverOnlyContext));
+  } else if (globalContext && globalContext.serverOnlyContext) {
+    contextPart.serverOnlyContext = 'ServerOnlyContext';
+  }
+  const { clientContext, serverOnlyContext } = contextPart;
+  if (clientContext || serverOnlyContext) {
+    contextPart.serverContext = clientContext
+      ? (serverOnlyContext ? `${clientContext} & ${serverOnlyContext}` : clientContext)
+      : (serverOnlyContext ? serverOnlyContext : undefined);
+  }
+
+  const interfacePart = {
     name: className,
     methods: Object.entries(properties)
     .filter(([_, method]: Pair) => isMethod(method))
@@ -178,13 +212,20 @@ export function transformClassPair([className, { properties, required }]: Pair):
       };
     }),
     attributes: Object.entries(properties)
-    .filter(([_, method]: Pair) => !isMethod(method))
+    .filter(([name, method]: Pair) => !isMethod(method) && name !== 'clientContext' && name !== 'serverOnlyContext')
     .map(([attrName, attrDef]: Pair) => ({
       name: attrName,
       type: typeToString(attrDef),
       optional: !(required || []).includes(attrName),
     })),
   };
+
+  return Object.keys(interfacePart.methods).length > 0
+    ? {
+      ...contextPart,
+      ...interfacePart,
+    }
+    : interfacePart;
 }
 
 const validEnumKeyRegex = /^[a-z][a-z\d_-]*$/i;
@@ -219,10 +260,13 @@ export function transform(schema): ServiceSpec {
   const bypassTypes = bypassTypeDefs.map(([name, v]) => ({ name, def: typeToString(v) }));
   const classDefinitions = sortedDefinitions.filter(([_, { properties }]: Pair) => properties);
   const [exceptionsWithName, classesWithName] = partition(classDefinitions, ([_, s]) => isException(s));
-  const exceptions = exceptionsWithName.map(transformClassPair);
-  const classes = classesWithName.map(transformClassPair);
-  const clientContext = classes.find(({ name }) => name === 'ClientContext');
-  const serverOnlyContext = classes.find(({ name }) => name === 'ServerOnlyContext');
+  const exceptions = exceptionsWithName.map(([name, def]) => transformClassPair(name, def));
+  const clientContext = classesWithName.some(([name]) => name === 'ClientContext');
+  const serverOnlyContext = classesWithName.some(([name]) => name === 'ServerOnlyContext');
+  const classes = classesWithName.map(([name, def]) => transformClassPair(name, def, {
+    clientContext,
+    serverOnlyContext,
+  }));
   const serverContext = clientContext
     ? (serverOnlyContext ? 'ClientContext & ServerOnlyContext' : 'ClientContext')
     : (serverOnlyContext ? 'ServerOnlyContext' : undefined);
@@ -232,8 +276,10 @@ export function transform(schema): ServiceSpec {
     exceptions,
     enums,
     bypassTypes,
-    clientContext,
-    serverOnlyContext,
-    serverContext,
+    globals: {
+      clientContext,
+      serverOnlyContext,
+      serverContext,
+    },
   };
 }

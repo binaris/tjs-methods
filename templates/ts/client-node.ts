@@ -33,15 +33,17 @@ export interface Options extends Pick<RequestInit, 'agent' | 'redirect' | 'follo
   headers?: Record<string, string>;
 }
 
+{{#globals}}
 {{#clientContext}}
 export type Context = ClientContext;
 {{/clientContext}}
+{{/globals}}
 
 {{#classes}}
 {{^attributes}}
 export interface {{name}} {
   {{#methods}}
-  {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{name}}({{#clientContext}}ctx: {{{clientContext}}} ,{{/clientContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 
@@ -62,7 +64,7 @@ export class {{name}}Client {
   }
   {{#methods}}
 
-  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}, {{/parameters}}options?: Options): Promise<{{{returnType}}}> {
+  public async {{name}}({{#clientContext}}ctx: {{{clientContext}}} ,{{/clientContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}, {{/parameters}}options?: Options): Promise<{{{returnType}}}> {
     const body = {
       {{#clientContext}}
       ctx,

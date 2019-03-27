@@ -179,6 +179,32 @@ async function main() {
 main();
 ```
 
+#### Custom context
+When exporting multiple interfaces from the same file you might want to use custom Context for each interface.\
+In order to use the custom Context interfaces specify `clientContext` or `serverOnlyContext` fields on your interface, like so:
+```typescript
+export interface AuthInfo {
+  token: string;
+}
+
+export interface User {
+  name: string;
+}
+
+export interface Example {
+  clientContext: AuthInfo;
+  serverOnlyContext: User;
+  greet: {
+    params: {
+      greeting: string;
+    };
+    returns: string;
+  }
+}
+```
+
+In order to disable a context on your interface, specify: `clientContext: false` or `serverOnlyContext: false`. 
+
 ### Generating only client / server
 ```bash
 concord -o ./generated_client node --client fetch example-client@0.0.1 interfaces.ts

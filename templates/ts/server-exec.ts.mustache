@@ -17,34 +17,39 @@ import {
   {{/bypassTypes}}
 } from './interfaces';
 
+{{#globals}}
 {{#serverOnlyContext}}
 
 export { ServerOnlyContext };
-export type ContextExtractor = () => Promise<ServerOnlyContext>;
 {{/serverOnlyContext}}
 {{#serverContext}}
 export type Context = {{{serverContext}}};
 {{/serverContext}}
+{{/globals}}
 {{#classes}}
 {{^attributes}}
+
+{{#serverOnlyContext}}
+export type {{{name}}}ContextExtractor = () => Promise<{{{serverOnlyContext}}}>;
+{{/serverOnlyContext}}
 
 const {{{name}}}Validator = validateClass(schema, '{{{name}}}');
 
 export interface {{{name}}}Handler {
   {{#methods}}
-  {{{name}}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{{name}}}({{#serverContext}}ctx: {{{serverContext}}}, {{/serverContext}}{{#parameters}}{{{name}}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 {{#methods}}
 
-export async function exec{{{className}}}{{{name}}}(body: any, fn: {{{className}}}Handler['{{{name}}}']{{#serverOnlyContext}}, extractContext: ContextExtractor{{/serverOnlyContext}}, stackTraceInError: boolean = false) {
-  let context: {{#serverContext}}Context{{/serverContext}}{{^serverContext}}{}{{/serverContext}} | undefined;
+export async function exec{{{className}}}{{{name}}}(body: any, fn: {{{className}}}Handler['{{{name}}}']{{#serverOnlyContext}}, extractContext: {{{className}}}ContextExtractor{{/serverOnlyContext}}, stackTraceInError: boolean = false) {
+  let context: {{#serverContext}}{{{serverContext}}}{{/serverContext}}{{^serverContext}}{}{{/serverContext}} | undefined;
   try {
     {{{className}}}Validator('{{{name}}}', body);
     const { ctx: clientContextFromBody, ...args } = body;
 
     {{#clientContext}}
-    const clientContext = clientContextFromBody as ClientContext;
+    const clientContext = clientContextFromBody as {{clientContext}};
     {{/clientContext}}
     {{^clientContext}}
     const clientContext = {};
