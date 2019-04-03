@@ -1,8 +1,8 @@
 // tslint:disable
 import fetch from 'node-fetch';
-import { RequestInit } from 'node-fetch';
+import { RequestInit, Response } from 'node-fetch';
 import AbortController from 'abort-controller';
-import { createReturnTypeValidator, ClassValidator, ValidationError } from './common';
+import { createReturnTypeValidator, ClassValidator, ValidationError, RequestError } from './common';
 import {
   schema,
   InternalServerError,
@@ -21,6 +21,14 @@ import {
 } from './interfaces';
 
 export class TimeoutError extends Error {
+  public method: string;
+  public options: any;
+  constructor(message: string, method: string, options: any) {
+    super(message);
+    this.name = 'TimeoutError';
+    this.method = method;
+    this.options = options;
+  }
 }
 
 export {
@@ -59,7 +67,7 @@ export class {{name}}Client {
 
   public readonly validators: ClassValidator; // We don't have class name in method scope because mustache sux
 
-  public constructor(protected readonly serverUrl: string, protected readonly options: Options = {}) {
+  public constructor(public readonly serverUrl: string, protected readonly options: Options = {}) {
     this.validators = {{{name}}}Client.validators;
   }
   {{#methods}}
@@ -89,8 +97,11 @@ export class {{name}}Client {
       delete mergedOptions.timeoutMs;
     }
 
+    let response: Response;
+    let responseBody: any;
+    let isJSON: boolean;
     try {
-      const response = await fetchImpl(`${this.serverUrl}/{{name}}`, {
+      response = await fetchImpl(`${this.serverUrl}/{{name}}`, {
         ...mergedOptions as RequestInit,
         headers: {
           ...mergedOptions.headers,
@@ -99,37 +110,38 @@ export class {{name}}Client {
         body: JSON.stringify(body),
         method: 'POST',
       });
-      const isJSON = (response.headers.get('content-type') || '').startsWith('application/json');
-      if (response.status >= 200 && response.status < 300) {
-        const validator = this.validators.{{{name}}};
-        const wrapped = { returns: isJSON ? await response.json() : undefined }; // wrapped for coersion
-        if (!validator(wrapped)) {
-          throw new ValidationError('Failed to validate response', validator.errors);
-        }
-        return wrapped.returns as {{{returnType}}};
-      } else if (!isJSON) {
-        throw new Error(`${response.status} - ${response.statusText}`);
-      } else if (response.status === 400) {
-        const body = await response.json();
-        if (body.name === 'ValidationError') {
-          throw new ValidationError(body.message, body.errors);
-        }
-      } else if (response.status === 500) {
-        const body = await response.json();
-        {{#throws}}
-        if (body.name === '{{.}}') {
-          throw new {{.}}(body.message);
-        }
-        {{/throws}}
-        throw new InternalServerError(body.message);
+      isJSON = (response.headers.get('content-type') || '').startsWith('application/json');
+      if (isJSON && (response.status >= 200 && response.status < 300 || response.status === 400 || response.status === 500)) {
+        responseBody = await response.json();
       }
-      throw new Error(`${response.status} - ${response.statusText}`);
     } catch (err) {
       if (err.message === 'The user aborted a request.') {
-        throw new TimeoutError('Request aborted due to timeout on method "{{{name}}}"');
+        throw new TimeoutError('Request aborted due to timeout on method "{{{name}}}"', "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
       }
-      throw err;
+      throw new RequestError(err.message, err, "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
     }
+    if (response.status >= 200 && response.status < 300) {
+      const validator = this.validators.{{{name}}};
+      const wrapped = { returns: isJSON ? responseBody : undefined }; // wrapped for coersion
+      if (!validator(wrapped)) {
+        throw new ValidationError('Failed to validate response', validator.errors);
+      }
+      return wrapped.returns as {{{returnType}}};
+    } else if (!isJSON) {
+      // fall through to throw
+    } else if (response.status === 400) {
+      if (responseBody.name === 'ValidationError') {
+        throw new ValidationError(responseBody.message, responseBody.errors);
+      }
+    } else if (response.status === 500) {
+      {{#throws}}
+      if (responseBody.name === '{{.}}') {
+        throw new {{.}}(responseBody.message);
+      }
+      {{/throws}}
+      throw new InternalServerError(responseBody.message);
+    }
+    throw new RequestError(`${response.status} - ${response.statusText}`, undefined, "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
   }
   {{/methods}}
 }

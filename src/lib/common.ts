@@ -4,11 +4,25 @@ import * as Ajv from 'ajv';
 export class ValidationError extends Error {
   constructor(message: string, public errors: any) {
     super(message);
+    this.name = 'ValidationError';
   }
 }
 
 export interface ClassValidator {
   [method: string]: Ajv.ValidateFunction;
+}
+
+export class RequestError extends Error {
+  public cause: any;
+  public method: string;
+  public options: any;
+  constructor(message: string, cause: any, method: string, options: any) {
+    super(message);
+    this.name = 'RequestError';
+    this.cause = cause;
+    this.method = method;
+    this.options = options;
+  }
 }
 
 function createValidator(): Ajv.Ajv {

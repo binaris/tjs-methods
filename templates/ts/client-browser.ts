@@ -1,5 +1,5 @@
 // tslint:disable
-import { createReturnTypeValidator, ClassValidator, ValidationError } from './common';
+import { createReturnTypeValidator, ClassValidator, ValidationError, RequestError } from './common';
 import {
   schema,
   InternalServerError,
@@ -61,7 +61,7 @@ export class {{name}}Client {
 
   public readonly validators: ClassValidator; // We don't have class name in method scope because mustache sux
 
-  public constructor(protected readonly serverUrl: string, protected readonly options: Options = {}) {
+  public constructor(public readonly serverUrl: string, protected readonly options: Options = {}) {
     this.validators = {{{name}}}Client.validators;
   }
   {{#methods}}
@@ -80,40 +80,48 @@ export class {{name}}Client {
       ...this.options,
       ...options,
     };
-    const response = await fetch(`${this.serverUrl}/{{name}}`, {
-      ...mergedOptions,
-      headers: {
-        ...mergedOptions.headers,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-      method: 'POST',
-    });
-    const isJSON = (response.headers.get('content-type') || '').startsWith('application/json');
+    let response: Response;
+    let responseBody: any;
+    let isJSON: boolean;
+    try {
+      response = await fetch(`${this.serverUrl}/{{name}}`, {
+        ...mergedOptions,
+        headers: {
+          ...mergedOptions.headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        method: 'POST',
+      });
+      isJSON = (response.headers.get('content-type') || '').startsWith('application/json');
+      if (isJSON && (response.status >= 200 && response.status < 300 || response.status === 400 || response.status === 500)) {
+        responseBody = await response.json();
+      }
+    } catch (err) {
+      throw new RequestError(err.message, err, "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
+    }
     if (response.status >= 200 && response.status < 300) {
       const validator = this.validators.{{{name}}};
-      const wrapped = { returns: isJSON ? await response.json() : undefined }; // wrapped for coersion
+      const wrapped = { returns: isJSON ? responseBody : undefined }; // wrapped for coersion
       if (!validator(wrapped)) {
         throw new ValidationError('Failed to validate response', validator.errors);
       }
       return wrapped.returns as {{{returnType}}};
     } else if (!isJSON) {
-      throw new Error(`${response.status} - ${response.statusText}`);
+      // fall through to throw
     } else if (response.status === 400) {
-      const body = await response.json();
-      if (body.name === 'ValidationError') {
-        throw new ValidationError(body.message, body.errors);
+      if (responseBody.name === 'ValidationError') {
+        throw new ValidationError(responseBody.message, responseBody.errors);
       }
     } else if (response.status === 500) {
-      const body = await response.json();
       {{#throws}}
-      if (body.name === '{{.}}') {
-        throw new {{.}}(body.message);
+      if (responseBody.name === '{{.}}') {
+        throw new {{.}}(responseBody.message);
       }
       {{/throws}}
-      throw new InternalServerError(body.message);
+      throw new InternalServerError(responseBody.message);
     }
-    throw new Error(`${response.status} - ${response.statusText}`);
+    throw new RequestError(`${response.status} - ${response.statusText}`, undefined, "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
   }
   {{/methods}}
 }
