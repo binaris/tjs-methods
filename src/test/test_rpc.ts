@@ -766,7 +766,17 @@ await new Promise((resolve, reject) => {
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
 server.close();
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(/connect ECONNREFUSED/);
+try {
+  await client.bar('heh');
+} catch (err) {
+  expect(err.message).to.match(/connect ECONNREFUSED/);
+  expect(err.name).to.equal('RequestError');
+  expect(err.method).to.equal('bar');
+  expect(err.cause.message).to.match(/connect ECONNREFUSED/);
+  expect(err.options).to.deep.equal({ serverUrl: client.serverUrl });
+  return;
+}
+expect(false, 'should not get here').to.equal(true);
 }
 `;
   await new TestCase(dummySchema, '', tester, dummyMain).run();
@@ -814,7 +824,17 @@ await new Promise((resolve, reject) => {
 });
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 - Internal Server Error');
+try {
+  await client.bar('heh');
+} catch (err) {
+  expect(err.message).to.equal('500 - Internal Server Error');
+  expect(err.name).to.equal('RequestError');
+  expect(err.method).to.equal('bar');
+  expect(err.cause).to.equal(undefined);
+  expect(err.options).to.deep.equal({ serverUrl: client.serverUrl });
+  return;
+}
+expect(false, 'should not get here').to.equal(true);
 }
 `;
   await new TestCase(dummySchema, '', tester, dummyMain).run();
@@ -851,8 +871,16 @@ export default class Handler {
 import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
-  await expect(client.bar('yay', { timeoutMs: 100 })).to.eventually.be.rejectedWith(
-    Error, 'Request aborted due to timeout on method "bar"');
+  try {
+    await client.bar('yay', { timeoutMs: 100 });
+  } catch(err) {
+    expect(err.name).to.equal('TimeoutError');
+    expect(err.message).to.equal('Request aborted due to timeout on method "bar"');
+    expect(err.method).to.equal('bar');
+    expect(err.options).to.deep.equal({ serverUrl: client.serverUrl, timeoutMs: 100 });
+    return;
+  }
+  expect(false, 'Should not get here').to.equal(true);
 }
 `;
   await new TestCase(dummySchema, handler, tester).run();
@@ -871,7 +899,7 @@ import fetch from 'node-fetch';
 import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
-  const url = (client as any /* access protected member */).serverUrl;
+  const url = client.serverUrl;
   const res = await fetch(url + '/bar', {
     headers: {
       'Content-Type': 'application/json',
