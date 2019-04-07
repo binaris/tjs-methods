@@ -2,18 +2,12 @@
 export const schema = {{{schema}}};
 
 export class InternalServerError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "InternalServerError";
-  }
+  public readonly name = 'InternalServerError';
 }
 
 {{#exceptions}}
 export class {{name}} extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "{{name}}";
-  }
+  public readonly name = '{{name}}';
 }
 
 {{/exceptions}}

@@ -21,13 +21,9 @@ import {
 } from './interfaces';
 
 export class TimeoutError extends Error {
-  public method: string;
-  public options: any;
-  constructor(message: string, method: string, options: any) {
+  public readonly name = 'TimeoutError';
+  constructor(message: string, public readonly method: string, public readonly options: any) {
     super(message);
-    this.name = 'TimeoutError';
-    this.method = method;
-    this.options = options;
   }
 }
 
@@ -111,18 +107,20 @@ export class {{name}}Client {
         method: 'POST',
       });
       isJSON = (response.headers.get('content-type') || '').startsWith('application/json');
+      // don't try parsing the response if the status is not a know concord status
+      // TODO: verify this closes the request at some point
       if (isJSON && (response.status >= 200 && response.status < 300 || response.status === 400 || response.status === 500)) {
         responseBody = await response.json();
       }
     } catch (err) {
       if (err.message === 'The user aborted a request.') {
-        throw new TimeoutError('Request aborted due to timeout on method "{{{name}}}"', "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
+        throw new TimeoutError('Request aborted due to timeout', '{{name}}', { serverUrl: this.serverUrl, ...this.options, ...options });
       }
-      throw new RequestError(err.message, err, "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
+      throw new RequestError(err.message, err, '{{name}}', { serverUrl: this.serverUrl, ...this.options, ...options });
     }
     if (response.status >= 200 && response.status < 300) {
       const validator = this.validators.{{{name}}};
-      const wrapped = { returns: isJSON ? responseBody : undefined }; // wrapped for coersion
+      const wrapped = { returns: responseBody }; // wrapped for coersion
       if (!validator(wrapped)) {
         throw new ValidationError('Failed to validate response', validator.errors);
       }
@@ -141,7 +139,7 @@ export class {{name}}Client {
       {{/throws}}
       throw new InternalServerError(responseBody.message);
     }
-    throw new RequestError(`${response.status} - ${response.statusText}`, undefined, "{{name}}", { serverUrl: this.serverUrl, ...this.options, ...options });
+    throw new RequestError(`${response.status} - ${response.statusText}`, undefined, '{{name}}', { serverUrl: this.serverUrl, ...this.options, ...options });
   }
   {{/methods}}
 }
