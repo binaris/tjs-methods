@@ -875,7 +875,7 @@ export default async function test(client: TestClient) {
     await client.bar('yay', { timeoutMs: 100 });
   } catch(err) {
     expect(err.name).to.equal('TimeoutError');
-    expect(err.message).to.equal('Request aborted due to timeout on method "bar"');
+    expect(err.message).to.equal('Request aborted due to timeout');
     expect(err.method).to.equal('bar');
     expect(err.options).to.deep.equal({ serverUrl: client.serverUrl, timeoutMs: 100 });
     return;

@@ -2,9 +2,9 @@ import { identity, pick, fromPairs } from 'lodash';
 import * as Ajv from 'ajv';
 
 export class ValidationError extends Error {
+  public readonly name = 'ValidationError';
   constructor(message: string, public errors: any) {
     super(message);
-    this.name = 'ValidationError';
   }
 }
 
@@ -13,15 +13,14 @@ export interface ClassValidator {
 }
 
 export class RequestError extends Error {
-  public cause: any;
-  public method: string;
-  public options: any;
-  constructor(message: string, cause: any, method: string, options: any) {
+  public readonly name = 'RequestError';
+  constructor(
+    message: string,
+    public readonly cause: any,
+    public readonly method: string,
+    public readonly options: any
+  ) {
     super(message);
-    this.name = 'RequestError';
-    this.cause = cause;
-    this.method = method;
-    this.options = options;
   }
 }
 
