@@ -766,17 +766,11 @@ await new Promise((resolve, reject) => {
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
 server.close();
-try {
-  await client.bar('heh');
-} catch (err) {
-  expect(err.message).to.match(/connect ECONNREFUSED/);
-  expect(err.name).to.equal('RequestError');
-  expect(err.method).to.equal('bar');
-  expect(err.cause.message).to.match(/connect ECONNREFUSED/);
-  expect(err.options).to.deep.equal({ serverUrl: client.serverUrl });
-  return;
-}
-expect(false, 'should not get here').to.equal(true);
+const err = await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, /connect ECONNREFUSED/);
+expect(err.name).to.equal('RequestError');
+expect(err.method).to.equal('bar');
+expect(err.cause.message).to.match(/connect ECONNREFUSED/);
+expect(err.options).to.deep.equal({ serverUrl: client.serverUrl });
 }
 `;
   await new TestCase(dummySchema, '', tester, dummyMain).run();
@@ -824,17 +818,11 @@ await new Promise((resolve, reject) => {
 });
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
-try {
-  await client.bar('heh');
-} catch (err) {
-  expect(err.message).to.equal('500 - Internal Server Error');
-  expect(err.name).to.equal('RequestError');
-  expect(err.method).to.equal('bar');
-  expect(err.cause).to.equal(undefined);
-  expect(err.options).to.deep.equal({ serverUrl: client.serverUrl });
-  return;
-}
-expect(false, 'should not get here').to.equal(true);
+const err = await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 - Internal Server Error');
+expect(err.name).to.equal('RequestError');
+expect(err.method).to.equal('bar');
+expect(err.cause).to.deep.equal({ responseText: 'Internal Server Error', responseBody: undefined });
+expect(err.options).to.deep.equal({ serverUrl: client.serverUrl });
 }
 `;
   await new TestCase(dummySchema, '', tester, dummyMain).run();
@@ -871,16 +859,11 @@ export default class Handler {
 import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
-  try {
-    await client.bar('yay', { timeoutMs: 100 });
-  } catch(err) {
-    expect(err.name).to.equal('TimeoutError');
-    expect(err.message).to.equal('Request aborted due to timeout');
-    expect(err.method).to.equal('bar');
-    expect(err.options).to.deep.equal({ serverUrl: client.serverUrl, timeoutMs: 100 });
-    return;
-  }
-  expect(false, 'Should not get here').to.equal(true);
+  const err = await expect(client.bar('yay', { timeoutMs: 100 })).to.eventually.be.rejectedWith(Error,
+    'Request aborted due to timeout');
+  expect(err.name).to.equal('TimeoutError');
+  expect(err.method).to.equal('bar');
+  expect(err.options).to.deep.equal({ serverUrl: client.serverUrl, timeoutMs: 100 });
 }
 `;
   await new TestCase(dummySchema, handler, tester).run();
