@@ -82,6 +82,7 @@ export class {{name}}Client {
     };
     let response: Response;
     let responseBody: any;
+    let responseText: string | undefined;
     let isJSON: boolean;
     try {
       response = await fetch(`${this.serverUrl}/{{name}}`, {
@@ -94,10 +95,10 @@ export class {{name}}Client {
         method: 'POST',
       });
       isJSON = (response.headers.get('content-type') || '').startsWith('application/json');
-      // don't try parsing the response if the status is not a know concord status
-      // TODO: verify this closes the request at some point
-      if (isJSON && (response.status >= 200 && response.status < 300 || response.status === 400 || response.status === 500)) {
+      if (isJSON) {
         responseBody = await response.json();
+      } else {
+        responseText = await response.text();
       }
     } catch (err) {
       throw new RequestError(err.message, err, '{{name}}', { serverUrl: this.serverUrl, ...this.options, ...options });
@@ -123,7 +124,10 @@ export class {{name}}Client {
       {{/throws}}
       throw new InternalServerError(responseBody.message);
     }
-    throw new RequestError(`${response.status} - ${response.statusText}`, undefined, '{{name}}', { serverUrl: this.serverUrl, ...this.options, ...options });
+    throw new RequestError(`${response.status} - ${response.statusText}`,
+      { responseText: responseText && responseText.slice(0, 256), responseBody },
+      '{{name}}',
+      { serverUrl: this.serverUrl, ...this.options, ...options });
   }
   {{/methods}}
 }
