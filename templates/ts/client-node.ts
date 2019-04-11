@@ -79,18 +79,19 @@ export class {{name}}Client {
     };
 
     const mergedOptions = {
+      serverUrl: this.serverUrl,
       ...this.options,
       ...options,
     };
 
-    const fetchImpl = mergedOptions.fetchImplementation || fetch;
-    delete mergedOptions.fetchImplementation;
+    const { fetchImplementation, timeoutMs, headers, serverUrl, ...fetchOptions } = mergedOptions;
 
-    if (mergedOptions.timeoutMs) {
+    const fetchImpl = fetchImplementation || fetch;
+
+    if (timeoutMs) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), mergedOptions.timeoutMs);
-      (mergedOptions as any).signal = controller.signal;
-      delete mergedOptions.timeoutMs;
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      (fetchOptions as any).signal = controller.signal;
     }
 
     let response: Response;
@@ -98,10 +99,10 @@ export class {{name}}Client {
     let responseText: string | undefined;
     let isJSON: boolean;
     try {
-      response = await fetchImpl(`${this.serverUrl}/{{name}}`, {
-        ...mergedOptions as RequestInit,
+      response = await fetchImpl(`${serverUrl}/{{name}}`, {
+        ...fetchOptions,
         headers: {
-          ...mergedOptions.headers,
+          ...headers,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -115,10 +116,9 @@ export class {{name}}Client {
       }
     } catch (err) {
       if (err.message === 'The user aborted a request.') {
-        throw new TimeoutError('Request aborted due to timeout', '{{name}}',
-          { serverUrl: this.serverUrl, ...this.options, ...options });
+        throw new TimeoutError('Request aborted due to timeout', '{{name}}', mergedOptions);
       }
-      throw new RequestError(err.message, err, '{{name}}', { serverUrl: this.serverUrl, ...this.options, ...options });
+      throw new RequestError(err.message, err, '{{name}}', mergedOptions);
     }
     if (response.status >= 200 && response.status < 300) {
       const validator = this.validators.{{{name}}};
@@ -144,7 +144,7 @@ export class {{name}}Client {
     throw new RequestError(`${response.status} - ${response.statusText}`,
       { responseText: responseText && responseText.slice(0, 256), responseBody },
       '{{name}}',
-      { serverUrl: this.serverUrl, ...this.options, ...options });
+      mergedOptions);
   }
   {{/methods}}
 }
