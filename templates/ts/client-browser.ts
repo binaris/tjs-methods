@@ -17,6 +17,13 @@ import {
   {{/bypassTypes}}
 } from './interfaces';
 
+export class TimeoutError extends Error {
+  public readonly name = 'TimeoutError';
+  constructor(message: string, public readonly method: string, public readonly options: any) {
+    super(message);
+  }
+}
+
 export {
   ValidationError,
 };
@@ -32,6 +39,8 @@ export interface Options extends Pick<RequestInit,
   | 'keepalive'
   | 'window'
   > {
+  fetchImplementation?: typeof fetch;
+  timeoutMs?: number;
   headers?: Record<string, string>;
 }
 
@@ -77,18 +86,30 @@ export class {{name}}Client {
     };
 
     const mergedOptions = {
+      serverUrl: this.serverUrl,
       ...this.options,
       ...options,
     };
+
+    const { fetchImplementation, timeoutMs, headers, serverUrl, ...fetchOptions } = mergedOptions;
+
+    const fetchImpl = fetchImplementation || fetch;
+
+    if (timeoutMs) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      (fetchOptions as any).signal = controller.signal;
+    }
+
     let response: Response;
     let responseBody: any;
     let responseText: string | undefined;
     let isJSON: boolean;
     try {
-      response = await fetch(`${this.serverUrl}/{{name}}`, {
-        ...mergedOptions,
+      response = await fetchImpl(`${serverUrl}/{{name}}`, {
+        ...fetchOptions,
         headers: {
-          ...mergedOptions.headers,
+          ...headers,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -101,7 +122,10 @@ export class {{name}}Client {
         responseText = await response.text();
       }
     } catch (err) {
-      throw new RequestError(err.message, err, '{{name}}', { serverUrl: this.serverUrl, ...this.options, ...options });
+      if (err.message === 'The user aborted a request.') {
+        throw new TimeoutError('Request aborted due to timeout', '{{name}}', mergedOptions);
+      }
+      throw new RequestError(err.message, err, '{{name}}', mergedOptions);
     }
     if (response.status >= 200 && response.status < 300) {
       const validator = this.validators.{{{name}}};
@@ -127,7 +151,7 @@ export class {{name}}Client {
     throw new RequestError(`${response.status} - ${response.statusText}`,
       { responseText: responseText && responseText.slice(0, 256), responseBody },
       '{{name}}',
-      { serverUrl: this.serverUrl, ...this.options, ...options });
+      mergedOptions);
   }
   {{/methods}}
 }
