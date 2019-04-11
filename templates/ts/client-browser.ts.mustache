@@ -1,0 +1,20 @@
+// tslint:disable
+{{> clientHeader }}
+
+export interface Options extends Pick<RequestInit,
+  'cache'
+  | 'credentials'
+  | 'mode'
+  | 'redirect'
+  | 'referrer'
+  | 'referrerPolicy'
+  | 'integrity'
+  | 'keepalive'
+  | 'window'
+  > {
+  fetchImplementation?: typeof fetch;
+  timeoutMs?: number;
+  headers?: Record<string, string>;
+}
+
+{{> clientMain }}

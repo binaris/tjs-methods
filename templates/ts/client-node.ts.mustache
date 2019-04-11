@@ -1,0 +1,13 @@
+// tslint:disable
+import fetch from 'node-fetch';
+import { RequestInit, Response } from 'node-fetch';
+import AbortController from 'abort-controller';
+{{> clientImports }}
+
+export interface Options extends Pick<RequestInit, 'agent' | 'redirect' | 'follow' | 'compress'> {
+  fetchImplementation?: typeof fetch;
+  timeoutMs?: number;
+  headers?: Record<string, string>;
+}
+
+{{> clientMain }}
