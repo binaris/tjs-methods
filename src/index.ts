@@ -7,7 +7,7 @@ import * as path from 'path';
 import { GeneratedCode, Package, FrameworkMap, Runtime } from './types';
 import { transform } from './transform';
 
-const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
+const tmplPath = (name: string) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
 
 // @types packages could have been peer dependencies but we decided
@@ -135,12 +135,12 @@ export async function generate(
     allowUnusedLabels: true,
   };
 
-  const { libs, templateNames, pkg, partials } = mergeWith(
+  const { libs, templateNames, pkg, partials }: Generator = mergeWith(
     {},
     ...Object.entries(frameworks)
       .filter(([_, framework]) => framework !== undefined)
       .map(([kind, framework]) => getGenerator(runtime, kind, framework)),
-    (a, b) => isArray(a) ? a.concat(b) : undefined
+    (a: any, b: any) => isArray(a) ? a.concat(b) : undefined
   );
   const libContents = await Promise.all(libs.map((n) => readFile(path.join(libPath, n), 'utf-8')));
   const partialContents = zipObject(
