@@ -1,5 +1,5 @@
 import { readFile } from 'mz/fs';
-import { isArray, zip, fromPairs, merge, mergeWith } from 'lodash';
+import { isArray, zip, fromPairs, merge, mergeWith, zipObject } from 'lodash';
 import * as ts from 'typescript';
 import * as tjs from 'typescript-json-schema';
 import * as mustache from 'mustache';
@@ -51,6 +51,7 @@ export interface Generator {
   pkg: Package;
   libs: string[];
   templateNames: Record<string, string>;
+  partials: Record<string, string>;
 }
 
 function getGenerator(runtime: Runtime, kind: string, framework: string): Generator {
@@ -62,7 +63,11 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
         libs: ['common.ts'],
         templateNames: {
           'interfaces.ts': 'interfaces.ts',
-          'client-browser.ts': 'client.ts',
+          'client-browser.ts.mustache': 'client.ts',
+        },
+        partials: {
+          clientImports: 'client-imports.ts.mustache',
+          clientMain: 'client-main.ts.mustache',
         },
       };
     case Runtime.node:
@@ -72,7 +77,11 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
           libs: ['common.ts'],
           templateNames: {
             'interfaces.ts': 'interfaces.ts',
-            'client-node.ts': 'client.ts',
+            'client-node.ts.mustache': 'client.ts',
+          },
+          partials: {
+            clientImports: 'client-imports.ts.mustache',
+            clientMain: 'client-main.ts.mustache',
           },
         };
       } else if (kind === 'server' && framework === 'koa') {
@@ -84,6 +93,7 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
             'server-koa.ts': 'server.ts',
             'server-exec.ts.mustache': 'serverExec.ts',
           },
+          partials: {},
         };
       } else if (kind === 'server' && framework === 'binaris') {
         return {
@@ -94,6 +104,7 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
             'fn-binaris.ts': 'server.ts',
             'server-exec.ts.mustache': 'serverExec.ts',
           },
+          partials: {},
         };
       }
       break;
@@ -124,7 +135,7 @@ export async function generate(
     allowUnusedLabels: true,
   };
 
-  const { libs, templateNames, pkg } = mergeWith(
+  const { libs, templateNames, pkg, partials } = mergeWith(
     {},
     ...Object.entries(frameworks)
       .filter(([_, framework]) => framework !== undefined)
@@ -132,12 +143,16 @@ export async function generate(
     (a, b) => isArray(a) ? a.concat(b) : undefined
   );
   const libContents = await Promise.all(libs.map((n) => readFile(path.join(libPath, n), 'utf-8')));
+  const partialContents = zipObject(
+    Object.keys(partials),
+    await Promise.all(Object.values(partials).map((n) => readFile(tmplPath(n), 'utf-8'))),
+  );
 
   const program = ts.createProgram(paths, compilerOptions);
   const schema = tjs.generateSchema(program, '*', settings, paths);
   const spec = transform(schema);
   const templates = await Promise.all(Object.keys(templateNames).map((n) => readFile(tmplPath(n), 'utf-8')));
-  const rendered = templates.map((t) => mustache.render(t, spec));
+  const rendered = templates.map((t) => mustache.render(t, spec, partialContents));
 
   return {
     pkg,

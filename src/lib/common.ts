@@ -12,23 +12,6 @@ export interface ClassValidator {
   [method: string]: Ajv.ValidateFunction;
 }
 
-export class RequestError extends Error {
-  public readonly name = 'RequestError';
-  constructor(
-    message: string,
-    /**
-     * The original error causing this request to fail
-     * Inherits Error in case of network or parse errors
-     * In case of an invalid HTTP response it will contain an object with the body/trimmed text of the response
-     */
-    public readonly cause: any,
-    public readonly method: string,
-    public readonly options: any
-  ) {
-    super(message);
-  }
-}
-
 function createValidator(): Ajv.Ajv {
   const ajv = new Ajv({ useDefaults: true, allErrors: true });
   ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
