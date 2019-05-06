@@ -77,7 +77,7 @@ export class {{name}}Router {
       ctx.status = status;
       ctx.set('Content-Type', 'application/json');
       ctx.state.context = context;
-      if (status < 200 || status >= 300) {
+      if (status >= 400) {
         ctx.state._attachedError = responseBody;
       }
       ctx.body = JSON.stringify(responseBody);
