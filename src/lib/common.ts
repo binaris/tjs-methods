@@ -1,5 +1,6 @@
 import { identity, pick, fromPairs } from 'lodash';
-import Ajv from 'ajv';
+import { Ajv, ValidateFunction } from 'ajv';
+import AjvCtor = require('ajv');
 
 export class ValidationError extends Error {
   public readonly name = 'ValidationError';
@@ -9,11 +10,11 @@ export class ValidationError extends Error {
 }
 
 export interface ClassValidator {
-  [method: string]: Ajv.ValidateFunction;
+  [method: string]: ValidateFunction;
 }
 
-function createValidator(): Ajv.Ajv {
-  const ajv = new Ajv({ useDefaults: true, allErrors: true });
+function createValidator(): Ajv {
+  const ajv = new AjvCtor({ useDefaults: true, allErrors: true });
   ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
   ajv.addKeyword('coerce-date', {
     type: 'string',
@@ -58,7 +59,7 @@ export function createReturnTypeValidator(schema: { definitions: any }, classNam
   ]));
 }
 
-export function createInterfaceValidator(schema: { definitions: any }, ifaceName: string): Ajv.ValidateFunction {
+export function createInterfaceValidator(schema: { definitions: any }, ifaceName: string): ValidateFunction {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
     ajv.addSchema(v, `#/definitions/${k}`);
