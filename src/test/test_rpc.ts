@@ -1,8 +1,8 @@
 import test from 'ava';
-import * as path from 'path';
+import path from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import * as rmrf from 'rmfr';
+import rmrf from 'rmfr';
 import { writeFile, mkdir } from 'mz/fs';
 import { exec } from 'mz/child_process';
 import { spawn } from '../utils';

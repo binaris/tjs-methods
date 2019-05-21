@@ -1,5 +1,5 @@
 import { identity, pick, fromPairs } from 'lodash';
-import * as Ajv from 'ajv';
+import Ajv from 'ajv';
 
 export class ValidationError extends Error {
   public readonly name = 'ValidationError';

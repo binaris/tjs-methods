@@ -1,9 +1,9 @@
 import { format, promisify } from 'util';
-import * as glob from 'glob';
+import glob from 'glob';
 import { randomBytes } from 'crypto';
-import * as path from 'path';
-import * as yargs from 'yargs';
-import * as rmrf from 'rmfr';
+import path from 'path';
+import yargs from 'yargs';
+import rmrf from 'rmfr';
 import { generate } from './index';
 import { Runtime } from './types';
 import { TSOutput } from './output';

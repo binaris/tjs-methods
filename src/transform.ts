@@ -1,5 +1,5 @@
 import { first, isPlainObject, flatMap, partition } from 'lodash';
-import * as toposort from 'toposort';
+import toposort from 'toposort';
 
 type Pair = [string, any];
 
@@ -136,8 +136,8 @@ export function findRefs(definition): string[] {
 
 export function sortDefinitions(definitions): Pair[] {
   const order = toposort(flatMap(Object.entries(definitions), ([k, d]) =>
-    findRefs(d).map((r) => [r.replace(/^#\/definitions\//, ''), k])
-  ));
+    findRefs(d).map((r): [string, string] => [r.replace(/^#\/definitions\//, ''), k])
+  ) as ReadonlyArray<[string, string]>);
   return Object.entries(definitions).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 }
 
