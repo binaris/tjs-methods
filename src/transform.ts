@@ -1,19 +1,36 @@
 import { first, isPlainObject, flatMap, partition } from 'lodash';
 import toposort from 'toposort';
+import { Definition, PrimitiveType } from 'typescript-json-schema';
 
-type Pair = [string, any];
-
-interface TypeDef {
-  type?: string;
-  format?: string;
-  $ref?: string;
-  anyOf?: TypeDef[];
-  allOf?: TypeDef[];
-  properties?: { [name: string]: TypeDef };
-  required?: string[];
-  items?: TypeDef | TypeDef[];
-  enum?: any[];
+interface TypeDef extends Definition {
   concordType?: string;
+}
+
+interface ObjectTypeDef extends TypeDef {
+  type: 'object';
+  properties: Record<string, TypeDef>;
+}
+
+interface EnumTypeDef extends TypeDef {
+  enum: any[];
+}
+
+interface StringEnumTypeDef extends EnumTypeDef {
+  type: 'string';
+  enum: string[];
+}
+
+interface ParamTypeDef extends TypeDef {
+  properties: Record<string, TypeDef>;
+  propertyOrder: string[];
+}
+
+interface MethodTypeDef {
+  properties: {
+    params: ParamTypeDef;
+    returns: TypeDef;
+    throws: TypeDef; // TODO: should be optional
+  };
 }
 
 export function addCoersion(def: any): void {
@@ -36,8 +53,8 @@ export function typeToString(def: TypeDef): string {
     return concordType;
   }
   if (typeof type === 'string') {
-    if (defEnum) {
-      return defEnum.map((d) => JSON.stringify(d)).join(' | ');
+    if (defEnum !== undefined) {
+      return (defEnum as PrimitiveType[]).map((d) => JSON.stringify(d)).join(' | ');
     }
     if (type === 'object') {
       if (isPlainObject(properties)) {
@@ -120,7 +137,7 @@ export interface ServiceSpec {
   enums?: Array<{ name: string; def: Array<{ key: string; value: string; }> }>;
 }
 
-export function findRefs(definition): string[] {
+export function findRefs(definition: any): string[] {
   if (isPlainObject(definition)) {
     const refs = flatMap(Object.values(definition), findRefs);
     if (definition.$ref) {
@@ -134,22 +151,22 @@ export function findRefs(definition): string[] {
   return [];
 }
 
-export function sortDefinitions(definitions): Pair[] {
+export function sortDefinitions(definitions: Record<string, TypeDef>): Array<[string, TypeDef]> {
   const order = toposort(flatMap(Object.entries(definitions), ([k, d]) =>
     findRefs(d).map((r): [string, string] => [r.replace(/^#\/definitions\//, ''), k])
   ) as ReadonlyArray<[string, string]>);
   return Object.entries(definitions).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 }
 
-function isMethod(m): boolean {
+function isMethod(m: any): m is MethodTypeDef {
   return m && m.properties && m.properties.params && m.properties.returns;
 }
 
-function isString(p): boolean {
+function isString(p: any): boolean {
   return p && p.type === 'string';
 }
 
-function isException(s): boolean {
+function isException(s: any): boolean {
   const props = s && s.properties;
   return ['name', 'message', 'stack'].every((p) => isString(props[p]));
 }
@@ -163,7 +180,7 @@ function maybeFalse(s: string): string | false {
 
 export function transformClassPair(
   className: string,
-  { properties, required }: { properties: any; required: string[] },
+  { properties, required }: ObjectTypeDef,
   globalContext?: { clientContext: boolean; serverOnlyContext: boolean }
 ): ClassSpec {
   const contextPart: Pick<ClassSpec, 'clientContext' | 'serverOnlyContext' | 'serverContext'> = {};
@@ -187,8 +204,8 @@ export function transformClassPair(
   const interfacePart = {
     name: className,
     methods: Object.entries(properties)
-    .filter(([_, method]: Pair) => isMethod(method))
-    .map(([methodName, method]: Pair): Method => {
+    .filter((kv): kv is [string, MethodTypeDef] => isMethod(kv[1]))
+    .map(([methodName, method]): Method => {
       const params = Object.entries(method.properties.params.properties);
       const paramNames = Object.keys(method.properties.params.properties);
       if (paramNames.includes('ctx')) {
@@ -212,8 +229,8 @@ export function transformClassPair(
       };
     }),
     attributes: Object.entries(properties)
-    .filter(([name, method]: Pair) => !isMethod(method) && name !== 'clientContext' && name !== 'serverOnlyContext')
-    .map(([attrName, attrDef]: Pair) => ({
+    .filter(([name, method]) => !isMethod(method) && name !== 'clientContext' && name !== 'serverOnlyContext')
+    .map(([attrName, attrDef]) => ({
       name: attrName,
       type: typeToString(attrDef),
       optional: !(required || []).includes(attrName),
@@ -229,22 +246,25 @@ export function transformClassPair(
 }
 
 const validEnumKeyRegex = /^[a-z][a-z\d_-]*$/i;
-const isValidEnumKeyRegex = (s) => validEnumKeyRegex.test(s);
+const isValidEnumKeyRegex = (s: string) => validEnumKeyRegex.test(s);
 
-export function transform(schema): ServiceSpec {
+export function transform(schema: TypeDef): ServiceSpec {
   const { definitions } = schema;
+  if (definitions === undefined) {
+    throw new Error('Got schema with empty definitions');
+  }
   addCoersion(definitions);
   const sortedDefinitions = sortDefinitions(definitions);
   const bypassTypeDefs = sortedDefinitions.filter(
-    ([_, { anyOf, allOf }]: Pair) => anyOf || allOf);
+    ([_, { anyOf, allOf }]) => anyOf || allOf);
   const possibleEnumTypeDefs = sortedDefinitions.filter(
-    ([_, { enum: enumDef }]: Pair) => enumDef);
+    (kv): kv is [string, EnumTypeDef] => kv[1].enum !== undefined);
   const stringEnumTypeDefs = possibleEnumTypeDefs.filter(
-    ([_, { enum: enumDef, type }]: Pair) => type === 'string' && enumDef.every(isValidEnumKeyRegex));
+    (kv): kv is [string, StringEnumTypeDef] => kv[1].type === 'string' && kv[1].enum.every(isValidEnumKeyRegex));
   const invalidTypeEnumTypeDefs = possibleEnumTypeDefs.filter(
-    ([_, { type }]: Pair) => type !== 'string').map(first);
+    ([_, { type }]) => type !== 'string').map(first);
   const invalidStringEnumTypeDefs = possibleEnumTypeDefs.filter(
-    ([_, { enum: enumDef }]: Pair) => enumDef.some((d) => !isValidEnumKeyRegex(d))).map(first);
+    ([_, { enum: enumDef }]) => enumDef.some((d) => !isValidEnumKeyRegex(d))).map(first);
   if (invalidTypeEnumTypeDefs.length > 0) {
     throw new Error(
       `Unsupported enum type definitions found (expected string values only): ${invalidTypeEnumTypeDefs}`);
@@ -258,7 +278,8 @@ export function transform(schema): ServiceSpec {
     def: enumDef.map((value) => ({ key: value.toUpperCase().replace(/-/g, '_'), value: `'${value}'` })),
   }));
   const bypassTypes = bypassTypeDefs.map(([name, v]) => ({ name, def: typeToString(v) }));
-  const classDefinitions = sortedDefinitions.filter(([_, { properties }]: Pair) => properties);
+  const classDefinitions = sortedDefinitions.filter((kv): kv is [string, ObjectTypeDef] =>
+    kv[1].properties !== undefined);
   const [exceptionsWithName, classesWithName] = partition(classDefinitions, ([_, s]) => isException(s));
   const exceptions = exceptionsWithName.map(([name, def]) => transformClassPair(name, def));
   const clientContext = classesWithName.some(([name]) => name === 'ClientContext');

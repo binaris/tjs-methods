@@ -1,10 +1,11 @@
+import { ExecutionContext } from 'ava';
 import path from 'path';
 import { tmpdir } from 'os';
 import rmrf from 'rmfr';
 import { mkdtemp } from 'mz/fs';
 import { spawn } from '../utils';
 
-export async function pass(t, fn) {
+export async function pass(t: ExecutionContext, fn: () => any) {
   await fn();
   t.pass();
 }
@@ -30,14 +31,14 @@ export class TestRunner {
     return path.join(__dirname, '..', '..', 'node_modules', '.bin', exec);
   }
 
-  public spawn(cmd, ...args) {
+  public spawn(cmd: string, ...args: string[]) {
     return spawn(cmd, args, {
       cwd: this.dir,
       stdio: 'inherit',
     });
   }
 
-  public spawnInGen(cmd, ...args) {
+  public spawnInGen(cmd: string, ...args: string[]) {
     return spawn(cmd, args, {
       cwd: this.genDir,
       stdio: 'inherit',

@@ -1,7 +1,7 @@
 {
     "version": "2.4.2",
     "compilerOptions": {
-        "lib": ["es2017", "esnext"],
+        "lib": ["es2017", "esnext", "dom"],
         "types": ["node"],
         "target": "es2017",
         "module": "commonjs",
@@ -9,8 +9,7 @@
         "esModuleInterop": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "downlevelIteration": true,
-        "strictNullChecks": true,
+        "strict": true,
         "outDir": "dist"
     },
     "include": [
