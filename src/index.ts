@@ -1,9 +1,9 @@
 import { readFile } from 'mz/fs';
 import { isArray, zip, fromPairs, merge, mergeWith, zipObject } from 'lodash';
-import * as ts from 'typescript';
+import ts from 'typescript';
 import * as tjs from 'typescript-json-schema';
-import * as mustache from 'mustache';
-import * as path from 'path';
+import mustache from 'mustache';
+import path from 'path';
 import { GeneratedCode, Package, FrameworkMap, Runtime } from './types';
 import { transform } from './transform';
 
@@ -150,6 +150,9 @@ export async function generate(
 
   const program = ts.createProgram(paths, compilerOptions);
   const schema = tjs.generateSchema(program, '*', settings, paths);
+  if (schema === null) {
+    throw new Error('Could not generate schema');
+  }
   const spec = transform(schema);
   const templates = await Promise.all(Object.keys(templateNames).map((n) => readFile(tmplPath(n), 'utf-8')));
   const rendered = templates.map((t) => mustache.render(t, spec, partialContents));
