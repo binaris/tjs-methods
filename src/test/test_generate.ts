@@ -1,12 +1,12 @@
 import test from 'ava';
 import { zipObject, flatten, mapKeys } from 'lodash';
 import { tmpdir } from 'os';
-import * as glob from 'glob';
+import glob from 'glob';
 import { expect } from 'chai';
 import { promisify } from 'util';
-import * as path from 'path';
+import path from 'path';
 import { randomBytes } from 'crypto';
-import * as rmrf from 'rmfr';
+import rmrf from 'rmfr';
 import { readFile, writeFile, mkdir } from 'mz/fs';
 import { GeneratedCode, FrameworkMap } from '../types';
 import { spawn } from '../utils';

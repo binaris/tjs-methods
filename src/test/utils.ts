@@ -1,6 +1,6 @@
-import * as path from 'path';
+import path from 'path';
 import { tmpdir } from 'os';
-import * as rmrf from 'rmfr';
+import rmrf from 'rmfr';
 import { mkdtemp } from 'mz/fs';
 import { spawn } from '../utils';
 
