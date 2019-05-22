@@ -46,14 +46,20 @@ export class {{name}}Client {
     '{{name}}',
     {{/methods}}
   ];
-  public static readonly validators: ClassValidator = createReturnTypeValidator(schema, '{{{name}}}');
+  public static readonly validators: ClassValidator = createReturnTypeValidator(schema, '{{{name}}}', false);
+  public static readonly validatorsRemove: ClassValidator = createReturnTypeValidator(schema, '{{{name}}}', true);
 
   protected readonly props = schema.definitions.{{{name}}}.properties;
 
   public readonly validators: ClassValidator; // We don't have class name in method scope because mustache sux
 
   public constructor(public readonly serverUrl: string, protected readonly options: Options = {}) {
-    this.validators = {{{name}}}Client.validators;
+    if (options.removeAdditional) {
+      verifySchemaNestedAnyOf(schema, '/', false, schema);
+      this.validators = {{{name}}}Client.validatorsRemove;
+    } else {
+      this.validators = {{{name}}}Client.validators;
+    }
   }
   {{#methods}}
 

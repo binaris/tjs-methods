@@ -933,3 +933,54 @@ export default async function test(client: TestClient) {
 `;
   await new TestCase(schema, handler, tester).run();
 });
+
+test('client supports remove additional', pass, async () => {
+  const schema = `
+export interface Test {
+  bar: {
+    params: {
+      a: number;
+    };
+    returns: {
+      a: number;
+    };
+  };
+}`;
+  const handler = `
+export default class Handler {
+  public async bar(a: number): Promise<{ a: number }> {
+    return { a, b: 'hello!' } as any;
+  }
+}
+`;
+  const tester = `
+import { TestClient } from './client';
+export default async function test(client: TestClient) {
+  expect(await client.bar(3)).to.deep.equal({ a: 3 });
+}
+`;
+  const main = `
+import { AddressInfo } from 'net';
+import { TestServer } from './server';
+import { TestClient } from './client';
+import Handler from './handler';
+import test from './test';
+
+async function main() {
+  const h = new Handler();
+
+  const server = new TestServer(h, true);
+  const listener = await server.listen(0, '127.0.0.1');
+  const { address, port } = (listener.address() as AddressInfo);
+  const client = new TestClient('http://' + address + ':' + port, { removeAdditional: true });
+  await test(client);
+  process.exit(0);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+`;
+  await new TestCase(schema, handler, tester, main).run();
+});

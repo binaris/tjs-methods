@@ -8,6 +8,7 @@ export interface Options extends Pick<RequestInit, 'agent' | 'redirect' | 'follo
   fetchImplementation?: typeof fetch;
   timeoutMs?: number;
   headers?: Record<string, string>;
+  removeAdditional?: boolean;
 }
 
 {{> clientMain }}

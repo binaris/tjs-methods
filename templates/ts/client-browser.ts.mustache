@@ -15,6 +15,7 @@ export interface Options extends Pick<RequestInit,
   fetchImplementation?: typeof fetch;
   timeoutMs?: number;
   headers?: Record<string, string>;
+  removeAdditional?: boolean;
 }
 
 {{> clientMain }}
