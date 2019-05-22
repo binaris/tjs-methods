@@ -41,6 +41,7 @@
     "@types/toposort": "^2.0.1",
     "@types/yargs": "^13.0.0",
     "ajv": "^6.10.0",
+    "async-sema": "^3.0.0",
     "ava": "^1.4.1",
     "binaris": "^6.7.0",
     "chai": "^4.2.0",

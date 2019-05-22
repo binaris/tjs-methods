@@ -7,6 +7,7 @@ import { writeFile, mkdir } from 'mz/fs';
 import { exec } from 'mz/child_process';
 import { spawn } from '../utils';
 import { pass } from './utils';
+import { Sema } from 'async-sema';
 
 function mktemp(): string {
   return path.join(tmpdir(), `test-${randomBytes(20).toString('hex')}`);
@@ -14,6 +15,8 @@ function mktemp(): string {
 
 class TestCase {
   public readonly main: string;
+  public static semaphore = new Sema(4);
+
   constructor(
     public readonly schema: string,
     public readonly handler: string,
@@ -47,6 +50,15 @@ main().catch((err) => {
   }
 
   public async setup() {
+    await TestCase.semaphore.acquire();
+    try {
+      await this.setupUnlocked();
+    } finally {
+      TestCase.semaphore.release();
+    }
+  }
+
+  public async setupUnlocked() {
     await mkdir(this.dir);
     const genDir = path.join(this.dir, 'gen');
     await writeFile(path.join(this.dir, 'schema.ts'), this.schema);
