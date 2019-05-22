@@ -77,10 +77,9 @@ export class {{name}}Client {
 
     const fetchImpl = fetchImplementation || fetch;
 
-    let timeout: NodeJS.Timeout | undefined;
     if (timeoutMs) {
       const controller = new AbortController();
-      timeout = setTimeout(() => controller.abort(), timeoutMs);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       (fetchOptions as any).signal = controller.signal;
     }
 
@@ -106,12 +105,9 @@ export class {{name}}Client {
       }
     } catch (err) {
       if (err.message === 'The user aborted a request.') {
-        timeout = undefined;
         throw new TimeoutError('Request aborted due to timeout', '{{name}}', mergedOptions);
       }
       throw new RequestError(err.message, err, '{{name}}', mergedOptions);
-    } finally {
-      if (timeout) clearTimeout(timeout);
     }
     if (response.status >= 200 && response.status < 300) {
       const validator = this.validators.{{{name}}};
