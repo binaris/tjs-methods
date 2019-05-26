@@ -115,13 +115,15 @@ function getGenerator(runtime: Runtime, kind: string, framework: string): Genera
 export async function generate(
   runtime: Runtime,
   paths: string[],
-  frameworks: FrameworkMap
+  frameworks: FrameworkMap,
+  tjsSettings: tjs.PartialArgs = {},
 ): Promise<GeneratedCode> {
   const settings: tjs.PartialArgs = {
     required: true,
     noExtraProps: true,
     propOrder: true,
     validationKeywords: ['concordType'],
+    ...tjsSettings,
     include: paths,
   };
 

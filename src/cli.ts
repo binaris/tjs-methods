@@ -22,6 +22,7 @@ interface Args {
   'nocompile': boolean;
   'package': string;
   'publish-tag'?: string;
+  'allow-extra-props': boolean;
 }
 
 const tsSubcommand = (y: yargs.Argv) => y
@@ -89,6 +90,11 @@ const argv = yargs
     default: false,
     describe: 'Skip compilation (mostly for tests)',
   })
+  .option('allow-extra-props',  {
+    type: 'boolean',
+    default: false,
+    describe: 'Generate a schema that allows additionalProperties (see json-schema docs)',
+  })
   .argv;
 
 async function main({
@@ -101,6 +107,7 @@ async function main({
     server,
     publish,
     'publish-tag': tag,
+    'allow-extra-props': allowExtraProps,
   }: Args) {
   const parts = pkgName.split('@');
   if (parts.length < 2) {
@@ -125,7 +132,7 @@ async function main({
   const genPath = output || mktemp();
   try {
     const generator = new TSOutput(genPath);
-    const generated = await generate(runtime, paths, { client, server });
+    const generated = await generate(runtime, paths, { client, server }, { noExtraProps: !allowExtraProps });
     await generator.write(runtime, name, version, generated, { client, server });
     if (!noCompile) {
       await generator.compile();
