@@ -13,8 +13,14 @@ function mktemp(): string {
   return path.join(tmpdir(), `test-${randomBytes(20).toString('hex')}`);
 }
 
+interface Options {
+  readonly dir: string;
+  readonly generateArgs: string[];
+}
+
 class TestCase {
   public readonly main: string;
+  public readonly dir: string;
   public static semaphore = new Sema(4);
 
   constructor(
@@ -22,8 +28,12 @@ class TestCase {
     public readonly handler: string,
     public readonly tester: string,
     main?: string,
-    public readonly dir = mktemp()
+    public readonly options: Options = {
+      dir: mktemp(),
+      generateArgs: [],
+    },
   ) {
+    this.dir = this.options.dir;
     this.main = main || `
 import { AddressInfo } from 'net';
 import { TestServer } from './server';
@@ -70,6 +80,7 @@ main().catch((err) => {
       '--client', 'fetch',
       '--server', 'koa',
       '--nocompile',
+      ...(this.options.generateArgs || []),
       '-o',
       'gen',
     ], {
@@ -941,6 +952,69 @@ import { TestClient } from './client';
 export default async function test(client: TestClient) {
   const res = await client.bar({ headers: { 'Debug-Id': 'yay' } });
   expect(res).to.eql('yay');
+}
+`;
+  await new TestCase(schema, handler, tester).run();
+});
+
+const uecho = {
+  schema: `
+export interface User {
+  name: string;
+}
+
+export interface Test {
+  uecho: {
+    params: {
+      user: User;
+    };
+    returns: User;
+  };
+};`,
+  handler: `
+import { User } from './interfaces';
+
+export default class Handler {
+  public async uecho(user: User): Promise<User> {
+    return { name: user.name, age: (user as any).age || 667 } as User;
+  }
+}`,
+};
+
+test('rpc allows extra props when requested', pass, async () => {
+  const { schema, handler } = uecho;
+  const tester = `
+import { TestClient } from './client';
+import { User } from './interfaces';
+
+export default async function test(client: TestClient) {
+  const res = await client.uecho({ name: 'test', age: 666 } as User);
+  expect(res).to.eql({ name: 'test', age: 666 });
+}
+`;
+  await new TestCase(schema, handler, tester, undefined, {
+    dir: mktemp(),
+    generateArgs: ['--allow-extra-props'],
+  }).run();
+});
+
+test('rpc disallows extra props by default', pass, async () => {
+  const { schema, handler } = uecho;
+  const tester = `
+import { TestClient, ValidationError } from './client';
+import { User } from './interfaces';
+
+export default async function test(client: TestClient) {
+  const promise1 = client.uecho({ name: 'test', age: 666 } as User);
+  const err1 = await expect(promise1).to.eventually.be.rejectedWith(ValidationError, 'Bad Request');
+  expect(err1.errors.length).to.eql(1);
+  expect(err1.errors[0].keyword).to.eql('additionalProperties');
+  expect(err1.errors[0].dataPath).to.eql('.user');
+  const promise2 = client.uecho({ name: 'test' });
+  const err2 = await expect(promise2).to.eventually.be.rejectedWith(ValidationError, 'Failed to validate response');
+  expect(err2.errors.length).to.eql(1);
+  expect(err2.errors[0].keyword).to.eql('additionalProperties');
+  expect(err2.errors[0].dataPath).to.eql('.returns');
 }
 `;
   await new TestCase(schema, handler, tester).run();
