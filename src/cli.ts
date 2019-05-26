@@ -19,10 +19,10 @@ interface Args {
   client: string;
   server: string;
   publish: boolean;
-  'nocompile': boolean;
+  nocompile: boolean;
   'package': string;
   'publish-tag'?: string;
-  'allow-extra-props': boolean;
+  allowExtraProps: boolean;
 }
 
 const tsSubcommand = (y: yargs.Argv) => y
@@ -107,7 +107,7 @@ async function main({
     server,
     publish,
     'publish-tag': tag,
-    'allow-extra-props': allowExtraProps,
+    allowExtraProps,
   }: Args) {
   const parts = pkgName.split('@');
   if (parts.length < 2) {
