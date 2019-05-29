@@ -39,7 +39,11 @@ function createValidator(): Ajv {
   return ajv;
 }
 
-export function createClassValidator(schema: { definitions: any }, className: string, field: string): ClassValidator {
+export function createClassValidator(
+  schema: { definitions: { [key: string]: any } },
+  className: string,
+  field: string
+): ClassValidator {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
     ajv.addSchema(v, `#/definitions/${k}`);
@@ -49,7 +53,10 @@ export function createClassValidator(schema: { definitions: any }, className: st
   ]));
 }
 
-export function createReturnTypeValidator(schema: { definitions: any }, className: string): ClassValidator {
+export function createReturnTypeValidator(
+  schema: { definitions: { [key: string]: any } },
+  className: string
+): ClassValidator {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
     ajv.addSchema(v, `#/definitions/${k}`);
@@ -59,7 +66,10 @@ export function createReturnTypeValidator(schema: { definitions: any }, classNam
   ]));
 }
 
-export function createInterfaceValidator(schema: { definitions: any }, ifaceName: string): ValidateFunction {
+export function createInterfaceValidator(
+  schema: { definitions: { [key: string]: any } },
+  ifaceName: string
+): ValidateFunction {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
     ajv.addSchema(v, `#/definitions/${k}`);

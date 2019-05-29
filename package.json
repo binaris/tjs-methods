@@ -1,6 +1,6 @@
 {
   "name": "concord",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "transforms a Typescript interface into usable client / server code",
   "main": "dist/index.js",
   "scripts": {
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/glob": "^7.1.1",
-    "@types/lodash": "^4.14.130",
+    "@types/lodash": "^4.14.132",
     "@types/mustache": "^0.8.32",
     "@types/mz": "0.0.32",
     "@types/node": "^10.0.0",
@@ -45,9 +45,9 @@
     "ava": "^1.4.1",
     "binaris": "^6.7.0",
     "chai": "^4.2.0",
-    "puppeteer": "^1.16.0",
+    "puppeteer": "^1.17.0",
     "tslint": "^5.16.0",
-    "webpack": "^4.32.0",
+    "webpack": "^4.32.2",
     "webpack-cli": "^3.3.2",
     "webpack-dev-server": "^3.4.1"
   },
@@ -58,8 +58,8 @@
     "mz": "^2.7.0",
     "rmfr": "^2.0.0",
     "toposort": "^2.0.2",
-    "typescript": "^3.4.5",
-    "typescript-json-schema": "^0.38.0",
+    "typescript": "^3.5.1",
+    "typescript-json-schema": "^0.38.1",
     "yargs": "^13.2.4"
   }
 }
