@@ -75,6 +75,13 @@ test('typeToString transforms concordType to concordType', pass, () => {
   expect(result).to.equal('LT');
 });
 
+test('typeToString transforms type array into pipe separated string', pass, () => {
+  const result = typeToString({
+    type: ['string', 'number'],
+  });
+  expect(result).to.equal('string | number');
+});
+
 test('typeToString transforms ref into class name', pass, () => {
   const result = typeToString({ $ref: '#/definitions/User' });
   expect(result).to.equal('User');
@@ -277,61 +284,6 @@ test('transform transforms a simple class with single method', (t) => {
     enums: [],
     bypassTypes: [],
   }, result);
-});
-
-test('transform sorts output class by checking references', pass, () => {
-  const result = transform({
-    definitions: {
-      A: {
-        properties: {
-          foo: {
-            type: 'object',
-            properties: {
-              params: {
-                properties: {
-                  b: {
-                    $ref: '#/definitions/B',
-                  },
-                },
-                propertyOrder: ['b'],
-              },
-              returns: {
-                type: 'string',
-              },
-            },
-          },
-        },
-      },
-      B: {
-        properties: {
-          bar: {
-            type: 'object',
-            properties: {
-              params: {
-                properties: {
-                  c: {
-                    $ref: '#/definitions/C',
-                  },
-                },
-                propertyOrder: ['b'],
-              },
-              returns: {
-                type: 'string',
-              },
-            },
-          },
-        },
-      },
-      C: {
-        properties: {
-          baz: {
-            type: 'string',
-          },
-        },
-      },
-    },
-  });
-  expect(result.classes.map(({ name }) => name)).to.eql(['C', 'B', 'A']);
 });
 
 test('transform transforms exceptions', (t) => {

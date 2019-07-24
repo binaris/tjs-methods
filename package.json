@@ -38,7 +38,6 @@
     "@types/node": "^10.0.0",
     "@types/puppeteer": "^1.12.4",
     "@types/rmfr": "^2.0.0",
-    "@types/toposort": "^2.0.1",
     "@types/yargs": "^13.0.0",
     "ajv": "^6.10.0",
     "async-sema": "^3.0.0",
@@ -58,7 +57,6 @@
     "mz": "^2.7.0",
     "npm": "^6.10.2",
     "rmfr": "^2.0.0",
-    "toposort": "^2.0.2",
     "typescript": "^3.5.3",
     "typescript-json-schema": "^0.38.1",
     "yargs": "^13.2.4"

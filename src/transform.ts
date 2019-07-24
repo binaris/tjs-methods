@@ -1,5 +1,4 @@
 import { first, isPlainObject, flatMap, partition } from 'lodash';
-import toposort from 'toposort';
 import { Definition, PrimitiveType } from 'typescript-json-schema';
 
 interface TypeDef extends Definition {
@@ -82,6 +81,9 @@ export function typeToString(def: TypeDef): string {
     }
     return type;
   }
+  if (Array.isArray(type)) {
+    return type.map((elem) => typeToString({ type: elem })).join(' | ');
+  }
   if (typeof $ref === 'string') {
     return $ref.replace(/#\/definitions\//, '');
   }
@@ -149,13 +151,6 @@ export function findRefs(definition: any): string[] {
     return flatMap(definition, findRefs);
   }
   return [];
-}
-
-export function sortDefinitions(definitions: Record<string, TypeDef>): Array<[string, TypeDef]> {
-  const order = toposort(flatMap(Object.entries(definitions), ([k, d]) =>
-    findRefs(d).map((r): [string, string] => [r.replace(/^#\/definitions\//, ''), k])
-  ) as ReadonlyArray<[string, string]>);
-  return Object.entries(definitions).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 }
 
 function isMethod(m: any): m is MethodTypeDef {
@@ -254,10 +249,10 @@ export function transform(schema: TypeDef): ServiceSpec {
     throw new Error('Got schema with empty definitions');
   }
   addCoersion(definitions);
-  const sortedDefinitions = sortDefinitions(definitions);
-  const bypassTypeDefs = sortedDefinitions.filter(
+  const definitionPairs = Object.entries(definitions);
+  const bypassTypeDefs = definitionPairs.filter(
     ([_, { anyOf, allOf }]) => anyOf || allOf);
-  const possibleEnumTypeDefs = sortedDefinitions.filter(
+  const possibleEnumTypeDefs = definitionPairs.filter(
     (kv): kv is [string, EnumTypeDef] => kv[1].enum !== undefined);
   const stringEnumTypeDefs = possibleEnumTypeDefs.filter(
     (kv): kv is [string, StringEnumTypeDef] => kv[1].type === 'string' && kv[1].enum.every(isValidEnumKeyRegex));
@@ -278,7 +273,7 @@ export function transform(schema: TypeDef): ServiceSpec {
     def: enumDef.map((value) => ({ key: value.toUpperCase().replace(/-/g, '_'), value: `'${value}'` })),
   }));
   const bypassTypes = bypassTypeDefs.map(([name, v]) => ({ name, def: typeToString(v) }));
-  const classDefinitions = sortedDefinitions.filter((kv): kv is [string, ObjectTypeDef] =>
+  const classDefinitions = definitionPairs.filter((kv): kv is [string, ObjectTypeDef] =>
     kv[1].properties !== undefined);
   const [exceptionsWithName, classesWithName] = partition(classDefinitions, ([_, s]) => isException(s));
   const exceptions = exceptionsWithName.map(([name, def]) => transformClassPair(name, def));
