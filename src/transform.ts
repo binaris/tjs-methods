@@ -46,7 +46,21 @@ export function addCoersion(def: any): void {
   }
 }
 
-const sanitizeTemplate = (s: string) => s.replace(/<([^>]+)>/, (_, m) => `_of_${m.replace(/,\s*/g, '_')}`);
+const sanitizeTemplate = (s: string) => s.replace(/(\[\]|[<>\[\]]|(,\s*))/g, (m) => {
+  switch (m) {
+    case '<':
+      return '_of_';
+    case '[':
+      return 'tuple_of_';
+    case ']':
+    case '>':
+      return '_end';
+    case '[]':
+      return '_array';
+    default:
+      return '_';
+  }
+});
 const parensTypeToString = (def: TypeDef) => `(${typeToString(def)})`;
 
 export function typeToString(def: TypeDef): string {
