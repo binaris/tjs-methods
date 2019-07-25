@@ -79,7 +79,7 @@ test('typeToString transforms type array into pipe separated string', pass, () =
   const result = typeToString({
     type: ['string', 'number'],
   });
-  expect(result).to.equal('string | number');
+  expect(result).to.equal('(string) | (number)');
 });
 
 test('typeToString transforms ref into class name', pass, () => {
@@ -116,7 +116,7 @@ test('typeToString transforms anyOf into pipe separated string', pass, () => {
       },
     ],
   });
-  expect(result).to.equal('string | User');
+  expect(result).to.equal('(string) | (User)');
 });
 
 test('typeToString transforms allOf into ampersand separated string', pass, () => {
@@ -130,7 +130,7 @@ test('typeToString transforms allOf into ampersand separated string', pass, () =
       },
     ],
   });
-  expect(result).to.equal('User & Abuser');
+  expect(result).to.equal('(User) & (Abuser)');
 });
 
 test('typeToString transforms object into TS interface', pass, () => {

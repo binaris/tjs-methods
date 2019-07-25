@@ -45,6 +45,7 @@ export function addCoersion(def: any): void {
     }
   }
 }
+const parensTypeToString = (def: TypeDef) => `(${typeToString(def)})`;
 
 export function typeToString(def: TypeDef): string {
   const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, concordType } = def;
@@ -82,16 +83,16 @@ export function typeToString(def: TypeDef): string {
     return type;
   }
   if (Array.isArray(type)) {
-    return type.map((elem) => typeToString({ type: elem })).join(' | ');
+    return type.map((elem) => parensTypeToString({ type: elem })).join(' | ');
   }
   if (typeof $ref === 'string') {
     return $ref.replace(/#\/definitions\//, '');
   }
   if (Array.isArray(anyOf)) {
-    return anyOf.map(typeToString).join(' | ');
+    return anyOf.map(parensTypeToString).join(' | ');
   }
   if (Array.isArray(allOf)) {
-    return allOf.map(typeToString).join(' & ');
+    return allOf.map(parensTypeToString).join(' & ');
   }
   // tslint:disable-next-line no-console
   console.error('Could not determine type, defaulting to Object', def);
