@@ -60,8 +60,8 @@ test('typeToString transforms ref into class name', pass, () => {
 });
 
 test('typeToString transforms template ref into valid class name', pass, () => {
-  const result = typeToString({ $ref: '#/definitions/User<number, string>' });
-  expect(result).to.equal('User_of_number_string');
+  const result = typeToString({ $ref: '#/definitions/Foo<number, [string, boolean], null[], Bar<string>>' });
+  expect(result).to.equal('Foo_of_number_tuple_of_string_boolean_end_null_array_Bar_of_string_end_end');
 });
 
 test('typeToString transforms date-time format into Date', pass, () => {
@@ -276,7 +276,7 @@ test('transform transforms templated types', (t) => {
                 properties: {},
               },
               returns: {
-                type: 'Foo<number>',
+                $ref: '#/definitions/Foo<number>',
               },
             },
           },
@@ -305,13 +305,13 @@ test('transform transforms templated types', (t) => {
             name: 'add',
             parameters: [
             ],
-            returnType: 'Foo<number>',
+            returnType: 'Foo_of_number_end',
             throws: [],
           },
         ],
       },
       {
-        name: 'Foo_of_number',
+        name: 'Foo_of_number_end',
         attributes: [
           {
             name: 'foo',
