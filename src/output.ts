@@ -37,16 +37,16 @@ const tsconfig: Record<Runtime, any> = {
   [Runtime.node]: tsconfigBase,
 };
 
-function pathTo(module: string, binary: string) {
-  return require.resolve(join(module, 'bin', binary));
+function pathTo(...elements: string[]) {
+  return require.resolve(join(...elements));
 }
 
 export class TSOutput {
   protected npm: (...args: string[]) => Promise<number>;
   protected tsc: (...args: string[]) => Promise<number>;
 
-  private npmPath = pathTo('npm', 'npm-cli.js');
-  private tscPath = pathTo('typescript', 'tsc');
+  private npmPath = pathTo('npm', 'bin', 'npm-cli.js');
+  private tscPath = pathTo('typescript', 'bin', 'tsc');
 
   constructor(protected readonly genPath: string) {
     this.npm = (...args: string[]) => spawn('node', [this.npmPath, ...args], { cwd: genPath, stdio: 'inherit' });
