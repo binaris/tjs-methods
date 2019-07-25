@@ -3,6 +3,7 @@ import { merge } from 'lodash';
 import { mkdir, writeFile } from 'mz/fs';
 import { GeneratedCode, FrameworkMap, Runtime } from './types';
 import { spawn } from './utils';
+import { join } from 'path';
 
 const tsconfigBase = {
   version: '2.4.2',
@@ -36,13 +37,20 @@ const tsconfig: Record<Runtime, any> = {
   [Runtime.node]: tsconfigBase,
 };
 
+function pathTo(module: string, binary: string) {
+  return require.resolve(join(module, 'bin', binary));
+}
+
 export class TSOutput {
   protected npm: (...args: string[]) => Promise<number>;
   protected tsc: (...args: string[]) => Promise<number>;
 
+  private npmPath = pathTo('npm', 'npm-cli.js');
+  private tscPath = pathTo('typescript', 'tsc');
+
   constructor(protected readonly genPath: string) {
-    this.npm = (...args: string[]) => spawn('npm', args, { cwd: genPath, stdio: 'inherit' });
-    this.tsc = (...args: string[]) => spawn('tsc', args, { cwd: genPath, stdio: 'inherit' });
+    this.npm = (...args: string[]) => spawn('node', [this.npmPath, ...args], { cwd: genPath, stdio: 'inherit' });
+    this.tsc = (...args: string[]) => spawn(this.tscPath, args, { cwd: genPath, stdio: 'inherit' });
   }
 
   public async write(
