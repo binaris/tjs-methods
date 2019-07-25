@@ -58,7 +58,7 @@
     "npm": "^6.10.2",
     "rmfr": "^2.0.0",
     "typescript": "^3.5.3",
-    "typescript-json-schema": "^0.38.1",
+    "typescript-json-schema": "^0.39.0",
     "yargs": "^13.2.4"
   }
 }
