@@ -1,7 +1,7 @@
 import test from 'ava';
 import { expect } from 'chai';
 import { pass } from './utils';
-import { transform, typeToString, findRefs } from '../transform';
+import { transform, typeToString } from '../transform';
 
 const exceptionSchema = {
   properties: {
@@ -27,37 +27,9 @@ const exceptionSchema = {
   type: 'object',
 };
 
-test('findRefs finds all reffed types', pass, () => {
-  const result = findRefs({
-    properties: {
-      x: {
-        type: {
-          $ref: '#/definitions/X',
-        },
-      },
-      y: {
-        type: 'array',
-        items: {
-          type: {
-            $ref: '#/definitions/Y',
-          },
-        },
-      },
-      z: {
-        type: 'method',
-        parameters: [
-          {
-            name: 'z',
-            type: {
-              $ref: '#/definitions/Z',
-            },
-          },
-        ],
-        returnType: 'string',
-      },
-    },
-  });
-  expect(result).to.eql(['#/definitions/X', '#/definitions/Y', '#/definitions/Z']);
+test('typeToString transforms empty schema to any', pass, () => {
+  const result = typeToString({});
+  expect(result).to.equal('any');
 });
 
 test('typeToString transforms integer to number', pass, () => {
@@ -85,6 +57,11 @@ test('typeToString transforms type array into pipe separated string', pass, () =
 test('typeToString transforms ref into class name', pass, () => {
   const result = typeToString({ $ref: '#/definitions/User' });
   expect(result).to.equal('User');
+});
+
+test('typeToString transforms template ref into valid class name', pass, () => {
+  const result = typeToString({ $ref: '#/definitions/User<number, string>' });
+  expect(result).to.equal('User_of_number_string');
 });
 
 test('typeToString transforms date-time format into Date', pass, () => {
@@ -274,6 +251,75 @@ test('transform transforms a simple class with single method', (t) => {
             throws: [],
           },
         ],
+      },
+    ],
+    globals: {
+      clientContext: false,
+      serverOnlyContext: false,
+      serverContext: undefined,
+    },
+    enums: [],
+    bypassTypes: [],
+  }, result);
+});
+
+test('transform transforms templated types', (t) => {
+  const schema = {
+    definitions: {
+      Test: {
+        properties: {
+          add: {
+            type: 'object',
+            properties: {
+              params: {
+                type: 'object',
+                properties: {},
+              },
+              returns: {
+                type: 'Foo<number>',
+              },
+            },
+          },
+        },
+      },
+      'Foo<number>': {
+        properties: {
+          foo: {
+            type: 'number',
+          },
+        },
+      },
+    },
+  };
+  const result = transform(schema);
+  t.deepEqual({
+    schema: JSON.stringify(schema, undefined, 2),
+    exceptions: [],
+    classes: [
+      {
+        name: 'Test',
+        attributes: [],
+        methods: [
+          {
+            className: 'Test',
+            name: 'add',
+            parameters: [
+            ],
+            returnType: 'Foo<number>',
+            throws: [],
+          },
+        ],
+      },
+      {
+        name: 'Foo_of_number',
+        attributes: [
+          {
+            name: 'foo',
+            type: 'number',
+            optional: true,
+          },
+        ],
+        methods: [],
       },
     ],
     globals: {
