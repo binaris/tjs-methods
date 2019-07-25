@@ -1,4 +1,4 @@
-import { first, isPlainObject, flatMap, partition } from 'lodash';
+import { first, isPlainObject, partition } from 'lodash';
 import { Definition, PrimitiveType } from 'typescript-json-schema';
 
 interface TypeDef extends Definition {
@@ -45,9 +45,14 @@ export function addCoersion(def: any): void {
     }
   }
 }
+
+const sanitizeTemplate = (s: string) => s.replace(/<([^>]+)>/, (_, m) => `_of_${m.replace(/,\s*/g, '_')}`);
 const parensTypeToString = (def: TypeDef) => `(${typeToString(def)})`;
 
 export function typeToString(def: TypeDef): string {
+  if (Object.keys(def).length === 0) {
+    return 'any';
+  }
   const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, concordType } = def;
   if (typeof concordType === 'string') {
     return concordType;
@@ -86,7 +91,7 @@ export function typeToString(def: TypeDef): string {
     return type.map((elem) => parensTypeToString({ type: elem })).join(' | ');
   }
   if (typeof $ref === 'string') {
-    return $ref.replace(/#\/definitions\//, '');
+    return sanitizeTemplate($ref.replace(/^#\/definitions\//, ''));
   }
   if (Array.isArray(anyOf)) {
     return anyOf.map(parensTypeToString).join(' | ');
@@ -138,20 +143,6 @@ export interface ServiceSpec {
   };
   bypassTypes?: Array<{ name: string; def: string; }>;
   enums?: Array<{ name: string; def: Array<{ key: string; value: string; }> }>;
-}
-
-export function findRefs(definition: any): string[] {
-  if (isPlainObject(definition)) {
-    const refs = flatMap(Object.values(definition), findRefs);
-    if (definition.$ref) {
-      return [definition.$ref, ...refs];
-    }
-    return refs;
-  }
-  if (Array.isArray(definition)) {
-    return flatMap(definition, findRefs);
-  }
-  return [];
 }
 
 function isMethod(m: any): m is MethodTypeDef {
@@ -250,7 +241,7 @@ export function transform(schema: TypeDef): ServiceSpec {
     throw new Error('Got schema with empty definitions');
   }
   addCoersion(definitions);
-  const definitionPairs = Object.entries(definitions);
+  const definitionPairs = Object.entries(definitions).map(([k, v]) => [sanitizeTemplate(k), v]);
   const bypassTypeDefs = definitionPairs.filter(
     ([_, { anyOf, allOf }]) => anyOf || allOf);
   const possibleEnumTypeDefs = definitionPairs.filter(
