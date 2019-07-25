@@ -134,7 +134,7 @@ test('typeToString transforms array with items as object into TS interface', pas
       $ref: '#/definitions/User',
     },
   });
-  expect(result).to.equal('User[]');
+  expect(result).to.equal('Array<User>');
 });
 
 test('typeToString transforms array with items as array into TS interface', pass, () => {

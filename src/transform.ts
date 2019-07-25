@@ -88,7 +88,7 @@ export function typeToString(def: TypeDef): string {
       if (Array.isArray(items)) {
         return `[${items.map(typeToString).join(', ')}]`;
       } else if (isPlainObject(items)) {
-        return `${typeToString(items!)}[]`;
+        return `Array<${typeToString(items!)}>`;
       } else {
         throw new Error(`Invalid type for items: ${items}`);
       }
