@@ -129,7 +129,7 @@ export interface A {
 });
 
 test('generate generates declarations of root level union types', pass, async () => {
-  const iface = 'export type A = { a: number; } | { b: number; };';
+  const iface = 'export type A = ({ a: number; }) | ({ b: number; });';
   const { code } = await new TestCase(iface).generate({ server: 'koa' });
   expect(code['interfaces.ts']).to.contain(iface);
 });
