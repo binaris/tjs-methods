@@ -46,18 +46,22 @@ export function addCoersion(def: any): void {
   }
 }
 
-export function findRefs(definition: any): string[] {
-  if (isPlainObject(definition)) {
-    const refs = flatMap(Object.values(definition), findRefs);
-    if (definition.$ref) {
-      return [definition.$ref, ...refs];
-    }
-    return refs;
+export function deepFind<T>(obj: any, f: (x: any) => x is T): T[] {
+  if (f(obj)) {
+    return [obj];
   }
-  if (Array.isArray(definition)) {
-    return flatMap(definition, findRefs);
+  if (isPlainObject(obj)) {
+    return flatMap(Object.values(obj), (x) => deepFind(x, f));
+  }
+  if (Array.isArray(obj)) {
+    return flatMap(obj, (x) => deepFind(x, f));
   }
   return [];
+}
+
+export function findRefs(definition: any): string[] {
+  return deepFind(definition, (obj: any): obj is { $ref: string } => obj && typeof obj.$ref === 'string')
+    .map(({ $ref }) => $ref);
 }
 
 const deref = (ref: string) => ref.replace(/^#\/definitions\//, '');
@@ -242,6 +246,7 @@ export function transformClassPair(
           last: i === params.length - 1,
         })),
         returnType: typeToString(method.properties.returns).replace(/^null$/, 'void'),
+        // throws is either { $ref } or { anyOf: [ { $ref }, ...] }, findRefs will locate all of those
         throws: findRefs(method.properties.throws).map(deref),
       };
     }),
