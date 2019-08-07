@@ -348,41 +348,47 @@ test('transform transforms exceptions', (t) => {
                 type: 'integer',
               },
               throws: {
-                $ref: '#/definitions/RuntimeError',
+                anyOf: [
+                  {
+                    $ref: '#/definitions/RuntimeError',
+                  },
+                  {
+                    $ref: '#/definitions/ValidationError',
+                  },
+                ],
               },
             },
           },
         },
       },
       RuntimeError: exceptionSchema,
+      ValidationError: exceptionSchema,
     },
   };
   const result = transform(schema);
   t.deepEqual({
     schema: JSON.stringify(schema, undefined, 2),
-    exceptions: [
-      {
-        name: 'RuntimeError',
-        attributes: [
-          {
-            name: 'message',
-            type: 'string',
-            optional: false,
-          },
-          {
-            name: 'name',
-            type: 'string',
-            optional: false,
-          },
-          {
-            name: 'stack',
-            type: 'string',
-            optional: true,
-          },
-        ],
-        methods: [],
-      },
-    ],
+    exceptions: ['RuntimeError', 'ValidationError'].map((name) => ({
+      name,
+      attributes: [
+        {
+          name: 'message',
+          type: 'string',
+          optional: false,
+        },
+        {
+          name: 'name',
+          type: 'string',
+          optional: false,
+        },
+        {
+          name: 'stack',
+          type: 'string',
+          optional: true,
+        },
+      ],
+      methods: [],
+    })),
     classes: [
       {
         name: 'Test',
@@ -394,7 +400,7 @@ test('transform transforms exceptions', (t) => {
             parameters: [
             ],
             returnType: 'number',
-            throws: ['RuntimeError'],
+            throws: ['RuntimeError', 'ValidationError'],
           },
         ],
       },
