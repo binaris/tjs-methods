@@ -1,4 +1,4 @@
-import { first, isPlainObject, partition } from 'lodash';
+import { first, isPlainObject, partition, flatMap } from 'lodash';
 import { Definition, PrimitiveType } from 'typescript-json-schema';
 
 interface TypeDef extends Definition {
@@ -45,6 +45,22 @@ export function addCoersion(def: any): void {
     }
   }
 }
+
+export function findRefs(definition: any): string[] {
+  if (isPlainObject(definition)) {
+    const refs = flatMap(Object.values(definition), findRefs);
+    if (definition.$ref) {
+      return [definition.$ref, ...refs];
+    }
+    return refs;
+  }
+  if (Array.isArray(definition)) {
+    return flatMap(definition, findRefs);
+  }
+  return [];
+}
+
+const deref = (ref: string) => ref.replace(/^#\/definitions\//, '');
 
 const sanitizeTemplate = (s: string) => s.replace(/(\[\]|[<>\[\]]|(,\s*))/g, (m) => {
   switch (m) {
@@ -105,7 +121,7 @@ export function typeToString(def: TypeDef): string {
     return type.map((elem) => parensTypeToString({ type: elem })).join(' | ');
   }
   if (typeof $ref === 'string') {
-    return sanitizeTemplate($ref.replace(/^#\/definitions\//, ''));
+    return sanitizeTemplate(deref($ref));
   }
   if (Array.isArray(anyOf)) {
     return anyOf.map(parensTypeToString).join(' | ');
@@ -226,7 +242,7 @@ export function transformClassPair(
           last: i === params.length - 1,
         })),
         returnType: typeToString(method.properties.returns).replace(/^null$/, 'void'),
-        throws: method.properties.throws ? typeToString(method.properties.throws).split(' | ') : [],
+        throws: findRefs(method.properties.throws).map(deref),
       };
     }),
     attributes: Object.entries(properties)
