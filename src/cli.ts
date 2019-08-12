@@ -23,6 +23,7 @@ interface Args {
   'package': string;
   'publish-tag'?: string;
   allowExtraProps: boolean;
+  license: string;
 }
 
 const tsSubcommand = (y: yargs.Argv) => y
@@ -95,6 +96,12 @@ const argv = yargs
     default: false,
     describe: 'Generate a schema that allows additionalProperties (see json-schema docs)',
   })
+  .option('license',  {
+    type: 'string',
+    alias: 'l',
+    default: 'UNLICENSED',
+    describe: 'License to use in generate packaage',
+  })
   .argv;
 
 async function main({
@@ -108,6 +115,7 @@ async function main({
     publish,
     'publish-tag': tag,
     allowExtraProps,
+    license,
   }: Args) {
   const parts = pkgName.split('@');
   if (parts.length < 2) {
@@ -133,7 +141,7 @@ async function main({
   try {
     const generator = new TSOutput(genPath);
     const generated = await generate(runtime, paths, { client, server }, { noExtraProps: !allowExtraProps });
-    await generator.write(runtime, name, version, generated, { client, server });
+    await generator.write(runtime, name, version, license, generated, { client, server });
     if (!noCompile) {
       await generator.compile();
     }
