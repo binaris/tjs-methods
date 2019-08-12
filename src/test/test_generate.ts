@@ -27,7 +27,7 @@ class TestCase {
     await rmrf(this.dir);
   }
 
-  public async generate(frameworks: FrameworkMap, extraArguments?: Array<string>): Promise<GeneratedCode> {
+  public async generate(frameworks: FrameworkMap, extraArguments?: string[]): Promise<GeneratedCode> {
     await mkdir(this.dir);
     try {
       const schemaPath = path.join(this.dir, 'schema.ts');
@@ -146,7 +146,7 @@ export enum A {
 });
 
 test('generate UNLICENSED license when not specified', pass, async () => {
-  const { code, pkg } = await new TestCase(`
+  const { pkg } = await new TestCase(`
 export interface Test {
   bar: {
     params: {
@@ -161,7 +161,7 @@ export interface Test {
 
 test('generate requested license when specified', pass, async () => {
   const license = 'MIT';
-  const { code, pkg } = await new TestCase(`
+  const { pkg } = await new TestCase(`
 export interface Test {
   bar: {
     params: {
@@ -173,4 +173,3 @@ export interface Test {
   ).generate({ client: 'fetch' }, [`--license=${license}`]);
   expect(pkg.license).to.equal(license);
 });
-
