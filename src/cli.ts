@@ -100,7 +100,7 @@ const argv = yargs
     type: 'string',
     alias: 'l',
     default: 'UNLICENSED',
-    describe: 'License to use in generate packaage',
+    describe: 'License to use in generated package',
   })
   .argv;
 
