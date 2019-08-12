@@ -140,8 +140,8 @@ async function main({
   const genPath = output || mktemp();
   try {
     const generator = new TSOutput(genPath);
-    const generated = await generate(runtime, paths, { client, server }, { noExtraProps: !allowExtraProps });
-    await generator.write(runtime, name, version, license, generated, { client, server });
+    const generated = await generate(runtime, paths, { client, server }, { noExtraProps: !allowExtraProps }, license);
+    await generator.write(runtime, name, version, generated, { client, server });
     if (!noCompile) {
       await generator.compile();
     }

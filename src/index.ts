@@ -54,8 +54,9 @@ export interface Generator {
   partials: Record<string, string>;
 }
 
-function getGenerator(runtime: Runtime, kind: string, framework: string): Generator {
-  const { base, koaServerOnly, nodeClientOnly } = packageSpec;
+function getGenerator(runtime: Runtime, kind: string, framework: string, license: string): Generator {
+  const { base: baseSpec, koaServerOnly, nodeClientOnly } = packageSpec;
+  const base = { ...baseSpec, license };
   switch (runtime) {
     case Runtime.browser:
       return {
@@ -117,6 +118,7 @@ export async function generate(
   paths: string[],
   frameworks: FrameworkMap,
   tjsSettings: tjs.PartialArgs = {},
+  license: string,
 ): Promise<GeneratedCode> {
   const settings: tjs.PartialArgs = {
     required: true,
@@ -141,7 +143,7 @@ export async function generate(
     {},
     ...Object.entries(frameworks)
       .filter(([_, framework]) => framework !== undefined)
-      .map(([kind, framework]) => getGenerator(runtime, kind, framework)),
+      .map(([kind, framework]) => getGenerator(runtime, kind, framework, license)),
     (a: any, b: any) => isArray(a) ? a.concat(b) : undefined
   );
   const libContents = await Promise.all(libs.map((n) => readFile(path.join(libPath, n), 'utf-8')));

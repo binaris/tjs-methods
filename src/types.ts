@@ -18,7 +18,7 @@ export interface Package {
   peerDependencies?: {
     [name: string]: string;
   };
-  license?: string;
+  license: string;
 }
 
 export interface GeneratedCode {

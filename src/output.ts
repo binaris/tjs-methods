@@ -57,7 +57,6 @@ export class TSOutput {
     runtime: Runtime,
     name: string,
     version: string,
-    license: string,
     { code, pkg: basePackage }: GeneratedCode,
     { client, server }: FrameworkMap
   ) {
@@ -84,7 +83,6 @@ export class TSOutput {
       types: `${main}.d.ts`,
       name,
       version,
-      license,
     };
     await writeFile(path.join(this.genPath, 'package.json'), JSON.stringify(pkg));
   }
