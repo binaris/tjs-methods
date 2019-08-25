@@ -1,3 +1,4 @@
+import * as url from 'url';
 import { identity, pick, fromPairs } from 'lodash';
 import { Ajv, ValidateFunction } from 'ajv';
 import AjvCtor = require('ajv');
@@ -46,7 +47,7 @@ export function createClassValidator(
 ): ClassValidator {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
-    ajv.addSchema(v, `#/definitions/${k}`);
+    ajv.addSchema(v, `#/definitions/${url.format(k)}`);
   }
   return fromPairs(Object.entries(schema.definitions[className].properties).map(([method, s]) => [
     method, ajv.compile((s as any).properties[field]),
@@ -59,20 +60,9 @@ export function createReturnTypeValidator(
 ): ClassValidator {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
-    ajv.addSchema(v, `#/definitions/${k}`);
+    ajv.addSchema(v, `#/definitions/${url.format(k)}`);
   }
   return fromPairs(Object.entries(schema.definitions[className].properties).map(([method, s]) => [
     method, ajv.compile({ properties: pick((s as any).properties, 'returns') }),
   ]));
-}
-
-export function createInterfaceValidator(
-  schema: { definitions: { [key: string]: any } },
-  ifaceName: string
-): ValidateFunction {
-  const ajv = createValidator();
-  for (const [k, v] of Object.entries(schema.definitions)) {
-    ajv.addSchema(v, `#/definitions/${k}`);
-  }
-  return ajv.compile(schema.definitions[ifaceName]);
 }
