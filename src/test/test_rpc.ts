@@ -1019,3 +1019,37 @@ export default async function test(client: TestClient) {
 `;
   await new TestCase(schema, handler, tester).run();
 });
+
+test('rpc works for Partial param types', pass, async () => {
+  const schema = `
+export interface User {
+  name: string;
+}
+
+export interface Test {
+  bar: {
+    params: {
+      user: Partial<User>;
+    };
+    returns: string;
+  };
+}`;
+  const handler = `
+import { User } from './interfaces';
+
+export default class Handler {
+  public async bar(user: Partial<User>): Promise<string> {
+    return user.name || 'hey';
+  }
+}`;
+
+  const tester = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+  const res = await client.bar({});
+  expect(res).to.eql('hey');
+}
+`;
+  await new TestCase(schema, handler, tester).run();
+});
