@@ -1,4 +1,3 @@
-import * as url from 'url';
 import { identity, pick, fromPairs } from 'lodash';
 import { Ajv, ValidateFunction } from 'ajv';
 import AjvCtor = require('ajv');
@@ -40,6 +39,15 @@ function createValidator(): Ajv {
   return ajv;
 }
 
+// tslint:disable:max-line-length
+/**
+ * Copied from https://github.com/WHenderson/json-pointer-rfc6901/blob/ca2bfd17abe37ff09394222128192023dbfb067b/src/json-pointer.coffee#L255
+ */
+function escapeJsonPointer(ptr: string) {
+  return encodeURIComponent(ptr.replace(/~/g, '~0').replace(/\//g, '~1'));
+}
+// tslint:enable:max-line-length
+
 export function createClassValidator(
   schema: { definitions: { [key: string]: any } },
   className: string,
@@ -47,7 +55,7 @@ export function createClassValidator(
 ): ClassValidator {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
-    ajv.addSchema(v, `#/definitions/${url.format(k)}`);
+    ajv.addSchema(v, `#/definitions/${escapeJsonPointer(k)}`);
   }
   return fromPairs(Object.entries(schema.definitions[className].properties).map(([method, s]) => [
     method, ajv.compile((s as any).properties[field]),
@@ -60,7 +68,7 @@ export function createReturnTypeValidator(
 ): ClassValidator {
   const ajv = createValidator();
   for (const [k, v] of Object.entries(schema.definitions)) {
-    ajv.addSchema(v, `#/definitions/${url.format(k)}`);
+    ajv.addSchema(v, `#/definitions/${escapeJsonPointer(k)}`);
   }
   return fromPairs(Object.entries(schema.definitions[className].properties).map(([method, s]) => [
     method, ajv.compile({ properties: pick((s as any).properties, 'returns') }),
