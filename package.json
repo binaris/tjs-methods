@@ -1,6 +1,6 @@
 {
   "name": "concord",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "transforms a Typescript interface into usable client / server code",
   "main": "dist/index.js",
   "scripts": {
